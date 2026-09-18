@@ -43,7 +43,7 @@ function LoginForm() {
     if (result?.error) {
       setError("E-mail ou senha incorretos")
     } else {
-      router.push("/ranking")
+      router.push("/feed")
       router.refresh()
     }
   }
@@ -61,7 +61,7 @@ function LoginForm() {
 
       {/* Google */}
       <button
-        onClick={() => signIn("google", { callbackUrl: "/ranking" })}
+        onClick={() => signIn("google", { callbackUrl: "/feed" })}
         className="flex items-center justify-center gap-3 w-full rounded-xl px-4 py-3 text-sm font-medium transition-all duration-150 hover:opacity-90 mb-5"
         style={{
           background: "rgba(255,255,255,0.05)",
