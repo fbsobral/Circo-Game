@@ -43,25 +43,23 @@ export default async function RankingPage({
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="text-center pt-4">
-        <h1
-          className="text-5xl font-bold mb-2"
-          style={{
-            fontFamily: "var(--font-cormorant)",
-            background: "linear-gradient(135deg, #c9a84c 0%, #f0c878 50%, #c9a84c 100%)",
-            backgroundSize: "200% auto",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-            backgroundClip: "text",
-          }}
-        >
-          Ranking
-        </h1>
-        <p className="text-sm text-[var(--muted)]">{ranked.length} participantes · ordenado por estrelas</p>
-      </div>
-
-      {/* Filters */}
-      <div className="flex justify-center">
+      <div className="flex items-end justify-between">
+        <div>
+          <h1
+            className="text-4xl font-bold"
+            style={{
+              fontFamily: "var(--font-cormorant)",
+              background: "linear-gradient(135deg, #c9a84c 0%, #f0c878 50%, #c9a84c 100%)",
+              backgroundSize: "200% auto",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Ranking
+          </h1>
+          <p className="text-sm text-[var(--muted)] mt-1">{ranked.length} participantes · ordenado por estrelas</p>
+        </div>
         <Suspense>
           <RankingFilters />
         </Suspense>
