@@ -63,11 +63,16 @@ export default async function FeedPage() {
 
   const nextCursor = initialData.length === 10 ? initialData[initialData.length - 1].id : null
 
+  const serialized = initialData.map((p) => ({
+    ...p,
+    createdAt: p.createdAt.toISOString(),
+  }))
+
   return (
     <div className="space-y-4 max-w-2xl mx-auto">
       <MiniRanking />
       <FeedClient
-        initialPosts={initialData}
+        initialPosts={serialized}
         nextCursor={nextCursor}
         currentUserId={userId}
         currentUserName={session!.user.name ?? ""}
