@@ -1,14 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { useSession } from "next-auth/react"
+import { signIn, useSession } from "next-auth/react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
 export default function TrocarSenhaPage() {
-  const router = useRouter()
-  const { update } = useSession()
+  const { data: session } = useSession()
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
   const [error, setError] = useState("")
@@ -28,12 +26,16 @@ export default function TrocarSenhaPage() {
       body: JSON.stringify({ password }),
     })
     const data = await res.json()
-    setLoading(false)
     if (!res.ok) {
       setError(data.error ?? "Erro ao salvar senha")
+      setLoading(false)
       return
     }
-    await update()
+    // Faz novo signIn para gerar JWT fresco sem mustChangePassword
+    const email = session?.user?.email
+    if (email) {
+      await signIn("credentials", { email, password, redirect: false })
+    }
     window.location.href = "/feed"
   }
 
