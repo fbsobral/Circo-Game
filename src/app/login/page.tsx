@@ -10,10 +10,8 @@ import { Input } from "@/components/ui/input"
 function LoginForm() {
   const router = useRouter()
   const params = useSearchParams()
-  const [tab, setTab] = useState<"login" | "register">("login")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [name, setName] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
@@ -23,21 +21,6 @@ function LoginForm() {
     e.preventDefault()
     setLoading(true)
     setError("")
-
-    if (tab === "register") {
-      const res = await fetch("/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
-      })
-      if (!res.ok) {
-        const data = await res.json()
-        setError(data.error ?? "Erro ao criar conta")
-        setLoading(false)
-        return
-      }
-    }
-
     const result = await signIn("credentials", { email, password, redirect: false })
     setLoading(false)
     if (result?.error) {
@@ -79,28 +62,7 @@ function LoginForm() {
         <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
       </div>
 
-      {/* Tabs */}
-      <div className="flex rounded-xl p-1 mb-5" style={{ background: "rgba(0,0,0,0.3)", border: "1px solid var(--border)" }}>
-        {(["login", "register"] as const).map((t) => (
-          <button
-            key={t}
-            onClick={() => { setTab(t); setError("") }}
-            className="flex-1 py-2 rounded-lg text-sm font-medium transition-all duration-150"
-            style={{
-              background: tab === t ? "var(--surface-2)" : "transparent",
-              color: tab === t ? "var(--text)" : "var(--muted)",
-              boxShadow: tab === t ? "0 2px 8px rgba(0,0,0,0.3)" : undefined,
-            }}
-          >
-            {t === "login" ? "Entrar" : "Criar conta"}
-          </button>
-        ))}
-      </div>
-
       <form onSubmit={handleCredentials} className="flex flex-col gap-3">
-        {tab === "register" && (
-          <Input placeholder="Seu nome" value={name} onChange={(e) => setName(e.target.value)} required />
-        )}
         <Input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <Input type="password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
 
@@ -109,17 +71,15 @@ function LoginForm() {
         )}
 
         <Button type="submit" loading={loading} className="w-full mt-1">
-          {tab === "login" ? "Entrar" : "Criar conta"}
+          Entrar
         </Button>
       </form>
 
-      {tab === "login" && (
-        <div className="mt-5 text-center">
-          <Link href="/forgot-password" className="text-xs text-[var(--muted)] hover:text-[var(--primary)] transition-colors">
-            Esqueci minha senha
-          </Link>
-        </div>
-      )}
+      <div className="mt-5 text-center">
+        <Link href="/forgot-password" className="text-xs text-[var(--muted)] hover:text-[var(--primary)] transition-colors">
+          Esqueci minha senha
+        </Link>
+      </div>
     </div>
   )
 }

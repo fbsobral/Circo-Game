@@ -34,7 +34,7 @@ export default function TrocarSenhaPage() {
       return
     }
     await update()
-    router.push("/dashboard")
+    router.push("/feed")
   }
 
   return (
