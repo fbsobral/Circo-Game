@@ -10,9 +10,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const comments = await db.postComment.findMany({
     where: { postId: id },
     orderBy: { createdAt: "asc" },
-    include: { author: { select: { id: true, name: true, image: true } } },
+    include: {
+      author: { select: { id: true, name: true, image: true } },
+      likes: { select: { userId: true } },
+    },
   })
-  return NextResponse.json(comments)
+  return NextResponse.json(comments.map((c) => ({ ...c, createdAt: c.createdAt.toISOString() })))
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -25,7 +28,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const comment = await db.postComment.create({
     data: { postId: id, authorId: session.user.id, content: content.trim() },
-    include: { author: { select: { id: true, name: true, image: true } } },
+    include: {
+      author: { select: { id: true, name: true, image: true } },
+      likes: { select: { userId: true } },
+    },
   })
-  return NextResponse.json(comment, { status: 201 })
+  return NextResponse.json({ ...comment, createdAt: comment.createdAt.toISOString() }, { status: 201 })
 }

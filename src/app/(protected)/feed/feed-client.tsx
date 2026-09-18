@@ -11,6 +11,7 @@ interface Comment {
   content: string
   createdAt: string
   author: Author
+  likes: { userId: string }[]
 }
 
 interface Post {
@@ -32,7 +33,82 @@ function timeAgo(date: string) {
   return new Date(date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
 }
 
-function PostCard({ post, currentUserId }: { post: Post; currentUserId: string }) {
+function IconHeart({ filled }: { filled: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </svg>
+  )
+}
+
+function IconTrash() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/>
+    </svg>
+  )
+}
+
+function IconImage() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+    </svg>
+  )
+}
+
+function IconComment() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+  )
+}
+
+async function compressImage(file: File, maxWidth = 1200, quality = 0.72): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        let w = img.width
+        let h = img.height
+        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth }
+        const canvas = document.createElement("canvas")
+        canvas.width = w
+        canvas.height = h
+        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL("image/jpeg", quality))
+      }
+      img.src = e.target!.result as string
+    }
+    reader.readAsDataURL(file)
+  })
+}
+
+function CommentLikeButton({ commentId, initialLikes, currentUserId }: { commentId: string; initialLikes: { userId: string }[]; currentUserId: string }) {
+  const [liked, setLiked] = useState(initialLikes.some((l) => l.userId === currentUserId))
+  const [count, setCount] = useState(initialLikes.length)
+
+  async function toggle() {
+    setLiked((v) => !v)
+    setCount((c) => liked ? c - 1 : c + 1)
+    await fetch(`/api/posts/_/comments/${commentId}/like`, { method: "POST" })
+  }
+
+  return (
+    <button
+      onClick={toggle}
+      className="inline-flex items-center gap-1 text-[10px] transition-colors"
+      style={{ color: liked ? "var(--danger, #e05c7a)" : "var(--muted)" }}
+    >
+      <IconHeart filled={liked} />
+      {count > 0 && <span>{count}</span>}
+    </button>
+  )
+}
+
+function PostCard({ post, currentUserId, onDelete }: { post: Post; currentUserId: string; onDelete: (id: string) => void }) {
   const likedByMe = post.likes.some((l) => l.userId === currentUserId)
   const [liked, setLiked] = useState(likedByMe)
   const [likeCount, setLikeCount] = useState(post.likes.length)
@@ -42,6 +118,11 @@ function PostCard({ post, currentUserId }: { post: Post; currentUserId: string }
   const [commentText, setCommentText] = useState("")
   const [commentLoading, setCommentLoading] = useState(false)
   const [commentCount, setCommentCount] = useState(post._count.comments)
+  const [deleting, setDeleting] = useState(false)
+  const [imageIndex, setImageIndex] = useState(0)
+
+  const images = post.imageUrl ? post.imageUrl.split("|||") : []
+  const isAuthor = post.author.id === currentUserId
 
   async function toggleLike() {
     setLiked((v) => !v)
@@ -75,6 +156,13 @@ function PostCard({ post, currentUserId }: { post: Post; currentUserId: string }
     setCommentLoading(false)
   }
 
+  async function handleDelete() {
+    if (!confirm("Excluir este post?")) return
+    setDeleting(true)
+    await fetch(`/api/posts/${post.id}`, { method: "DELETE" })
+    onDelete(post.id)
+  }
+
   return (
     <div
       className="rounded-2xl overflow-hidden"
@@ -87,6 +175,15 @@ function PostCard({ post, currentUserId }: { post: Post; currentUserId: string }
           <span className="user-name text-sm font-semibold">{post.author.name}</span>
           <span className="text-xs text-[var(--muted)] ml-2">{timeAgo(post.createdAt)}</span>
         </div>
+        {isAuthor && (
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="p-1.5 rounded-lg transition-colors hover:bg-[var(--surface-2)] text-[var(--muted)] hover:text-[var(--danger,#e05c7a)]"
+          >
+            <IconTrash />
+          </button>
+        )}
       </div>
 
       {/* Content */}
@@ -94,15 +191,57 @@ function PostCard({ post, currentUserId }: { post: Post; currentUserId: string }
         <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text)" }}>{post.content}</p>
       </div>
 
-      {/* Image */}
-      {post.imageUrl && (
+      {/* Images */}
+      {images.length > 0 && (
         <div className="px-4 pb-3">
-          <img
-            src={post.imageUrl}
-            alt=""
-            className="w-full rounded-xl object-cover max-h-96"
-            style={{ border: "1px solid var(--border)" }}
-          />
+          <div className="relative">
+            <img
+              src={images[imageIndex]}
+              alt=""
+              className="w-full rounded-xl object-cover max-h-96"
+              style={{ border: "1px solid var(--border)" }}
+            />
+            {images.length > 1 && (
+              <div className="absolute bottom-2 right-2 flex gap-1">
+                {images.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setImageIndex(i)}
+                    className="w-2 h-2 rounded-full transition-all"
+                    style={{ background: i === imageIndex ? "white" : "rgba(255,255,255,0.4)" }}
+                  />
+                ))}
+              </div>
+            )}
+            {images.length > 1 && imageIndex < images.length - 1 && (
+              <button
+                onClick={() => setImageIndex((i) => i + 1)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm"
+                style={{ background: "rgba(0,0,0,0.45)" }}
+              >›</button>
+            )}
+            {images.length > 1 && imageIndex > 0 && (
+              <button
+                onClick={() => setImageIndex((i) => i - 1)}
+                className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-white text-sm"
+                style={{ background: "rgba(0,0,0,0.45)" }}
+              >‹</button>
+            )}
+          </div>
+          {images.length > 1 && (
+            <div className="flex gap-1.5 mt-2 overflow-x-auto pb-1">
+              {images.map((src, i) => (
+                <button key={i} onClick={() => setImageIndex(i)} className="flex-shrink-0">
+                  <img
+                    src={src}
+                    alt=""
+                    className="h-12 w-12 rounded-lg object-cover transition-all"
+                    style={{ border: `1px solid ${i === imageIndex ? "var(--primary)" : "var(--border)"}`, opacity: i === imageIndex ? 1 : 0.6 }}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -111,9 +250,9 @@ function PostCard({ post, currentUserId }: { post: Post; currentUserId: string }
         <button
           onClick={toggleLike}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all duration-150 hover:bg-[var(--surface-2)] active:scale-95"
-          style={{ color: liked ? "var(--primary)" : "var(--muted)" }}
+          style={{ color: liked ? "var(--danger, #e05c7a)" : "var(--muted)" }}
         >
-          <span className="text-base">{liked ? "★" : "☆"}</span>
+          <IconHeart filled={liked} />
           <span className="font-medium">{likeCount > 0 ? likeCount : ""}</span>
         </button>
         <button
@@ -121,9 +260,7 @@ function PostCard({ post, currentUserId }: { post: Post; currentUserId: string }
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all duration-150 hover:bg-[var(--surface-2)]"
           style={{ color: showComments ? "var(--text)" : "var(--muted)" }}
         >
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
+          <IconComment />
           <span>{commentCount > 0 ? commentCount : ""}</span>
         </button>
       </div>
@@ -139,7 +276,10 @@ function PostCard({ post, currentUserId }: { post: Post; currentUserId: string }
                   <span className="user-name text-xs font-semibold mr-2">{c.author.name}</span>
                   <span className="text-sm leading-relaxed">{c.content}</span>
                 </div>
-                <span className="text-[10px] text-[var(--muted)] pl-3 mt-0.5 block">{timeAgo(c.createdAt)}</span>
+                <div className="flex items-center gap-3 pl-3 mt-1">
+                  <span className="text-[10px] text-[var(--muted)]">{timeAgo(c.createdAt)}</span>
+                  <CommentLikeButton commentId={c.id} initialLikes={c.likes} currentUserId={currentUserId} />
+                </div>
               </div>
             </div>
           ))}
@@ -164,23 +304,23 @@ function PostCard({ post, currentUserId }: { post: Post; currentUserId: string }
 
 function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUserName: string; currentUserImage: string | null; onPost: (post: Post) => void }) {
   const [content, setContent] = useState("")
-  const [imageUrl, setImageUrl] = useState("")
-  const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [previews, setPreviews] = useState<string[]>([])
+  const [images, setImages] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    if (file.size > 2 * 1024 * 1024) { alert("Imagem muito grande. Máximo 2MB."); return }
-    const reader = new FileReader()
-    reader.onload = (ev) => {
-      const result = ev.target?.result as string
-      setImagePreview(result)
-      setImageUrl(result)
-    }
-    reader.readAsDataURL(file)
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    const compressed = await Promise.all(files.map((f) => compressImage(f)))
+    setPreviews((p) => [...p, ...compressed])
+    setImages((imgs) => [...imgs, ...compressed])
+  }
+
+  function removeImage(i: number) {
+    setPreviews((p) => p.filter((_, idx) => idx !== i))
+    setImages((imgs) => imgs.filter((_, idx) => idx !== i))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -190,15 +330,15 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
     const res = await fetch("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content, imageUrl: imageUrl || null }),
+      body: JSON.stringify({ content, imageUrl: images.length ? images.join("|||") : null }),
     })
     setLoading(false)
     if (!res.ok) return
     const post = await res.json()
     onPost(post)
     setContent("")
-    setImageUrl("")
-    setImagePreview(null)
+    setPreviews([])
+    setImages([])
     setExpanded(false)
   }
 
@@ -217,14 +357,18 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
             style={{ color: "var(--text)", caretColor: "var(--primary)" }}
           />
 
-          {imagePreview && (
-            <div className="relative mt-2 inline-block">
-              <img src={imagePreview} alt="" className="max-h-48 rounded-xl object-cover" style={{ border: "1px solid var(--border)" }} />
-              <button
-                onClick={() => { setImagePreview(null); setImageUrl("") }}
-                className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full text-xs flex items-center justify-center"
-                style={{ background: "rgba(0,0,0,0.7)", color: "#fff" }}
-              >×</button>
+          {previews.length > 0 && (
+            <div className="flex flex-wrap gap-2 mt-2">
+              {previews.map((src, i) => (
+                <div key={i} className="relative">
+                  <img src={src} alt="" className="h-20 w-20 rounded-xl object-cover" style={{ border: "1px solid var(--border)" }} />
+                  <button
+                    onClick={() => removeImage(i)}
+                    className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full text-[10px] flex items-center justify-center"
+                    style={{ background: "rgba(0,0,0,0.7)", color: "#fff" }}
+                  >×</button>
+                </div>
+              ))}
             </div>
           )}
 
@@ -235,13 +379,10 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
                 onClick={() => fileRef.current?.click()}
                 className="flex items-center gap-1.5 text-xs text-[var(--muted)] hover:text-[var(--primary)] transition-colors"
               >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
-                </svg>
-                Foto
+                <IconImage />
+                Fotos
               </button>
-              <input ref={fileRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+              <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
               <Button size="sm" loading={loading} disabled={!content.trim()} onClick={handleSubmit}>Publicar</Button>
             </div>
           )}
@@ -268,6 +409,10 @@ export function FeedClient({ initialPosts, nextCursor: initCursor, currentUserId
     setPosts((p) => [post, ...p])
   }
 
+  function removePost(id: string) {
+    setPosts((p) => p.filter((post) => post.id !== id))
+  }
+
   const loadMore = useCallback(async () => {
     if (!cursor || loadingMore) return
     setLoadingMore(true)
@@ -290,7 +435,7 @@ export function FeedClient({ initialPosts, nextCursor: initCursor, currentUserId
       )}
 
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} currentUserId={currentUserId} />
+        <PostCard key={post.id} post={post} currentUserId={currentUserId} onDelete={removePost} />
       ))}
 
       {cursor && (

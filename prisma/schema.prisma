@@ -30,9 +30,10 @@ model User {
   recordedStars StarRecord[] @relation("RecorderRecords")
   classes       Class[]
   passwordResets PasswordReset[]
-  posts         Post[]
-  postLikes     PostLike[]
-  postComments  PostComment[]
+  posts            Post[]
+  postLikes        PostLike[]
+  postComments     PostComment[]
+  postCommentLikes PostCommentLike[]
 }
 
 model Account {
@@ -143,8 +144,21 @@ model PostComment {
   content   String   @db.Text
   createdAt DateTime @default(now())
 
-  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
-  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  post   Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes  PostCommentLike[]
 
   @@map("PostComment")
+}
+
+model PostCommentLike {
+  id        String @id @default(cuid())
+  commentId String
+  userId    String
+
+  comment PostComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@map("PostCommentLike")
 }
