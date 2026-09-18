@@ -73,6 +73,15 @@ function IconPlus() {
   )
 }
 
+function IconUser() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4"/>
+      <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+    </svg>
+  )
+}
+
 const Logo = () => (
   <Link href="/feed" className="flex items-center gap-2">
     <span
@@ -110,7 +119,7 @@ export function Navbar({ role, name }: NavbarProps) {
   ]
 
   const isActive = (href: string) =>
-    pathname === href || (href !== "/feed" && href !== "/ranking" && pathname.startsWith(href))
+    pathname === href || (href !== "/feed" && href !== "/ranking" && href !== "/conta" && pathname.startsWith(href))
 
   return (
     <>
@@ -148,6 +157,14 @@ export function Navbar({ role, name }: NavbarProps) {
                 + Registrar aula
               </Link>
             )}
+            <Link
+              href="/conta"
+              className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-150 hover:bg-[var(--surface-2)]"
+              style={{ color: isActive("/conta") ? "var(--primary)" : "var(--muted)" }}
+              title="Minha conta"
+            >
+              <IconUser />
+            </Link>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
               className="inline-flex items-center px-3 py-1.5 rounded-lg text-sm transition-all duration-150 hover:bg-[rgba(140,100,220,0.1)]"
@@ -200,6 +217,14 @@ export function Navbar({ role, name }: NavbarProps) {
             )}
           </Link>
         ))}
+        <Link
+          href="/conta"
+          className="flex-1 flex flex-col items-center gap-1 py-3 transition-all duration-150 active:scale-95"
+          style={{ color: isActive("/conta") ? "var(--primary)" : "var(--muted)" }}
+        >
+          <IconUser />
+          <span className="text-[10px] font-medium tracking-wide">Conta</span>
+        </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="flex-1 flex flex-col items-center gap-1 py-3 transition-all duration-150 active:scale-95"

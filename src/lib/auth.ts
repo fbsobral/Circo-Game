@@ -41,9 +41,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async signIn({ user, account }) {
       if (account?.provider !== "google") return true
-      if (!user.email) return true
+      if (!user.email) return false
       const existing = await db.user.findUnique({ where: { email: user.email } })
-      if (!existing) return true
+      if (!existing) return false
       const linked = await db.account.findFirst({ where: { userId: existing.id, provider: "google" } })
       if (!linked && account) {
         await db.account.create({
