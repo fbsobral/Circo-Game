@@ -292,7 +292,7 @@ function PostCard({ post, currentUserId, onDelete }: { post: Post; currentUserId
               rows={1}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitComment(e as unknown as React.FormEvent) } }}
               className="flex-1 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:border-[var(--primary)] transition-colors"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }}
+              style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
             />
             <Button type="submit" size="sm" loading={commentLoading} disabled={!commentText.trim()}>↑</Button>
           </form>
@@ -354,7 +354,7 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
             onFocus={() => setExpanded(true)}
             rows={expanded ? 3 : 1}
             className="w-full bg-transparent text-sm resize-none focus:outline-none leading-relaxed"
-            style={{ color: "var(--text)", caretColor: "var(--primary)" }}
+            style={{ color: "var(--text)", caretColor: "var(--primary)", fontSize: "16px" }}
           />
 
           {previews.length > 0 && (
