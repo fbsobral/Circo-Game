@@ -49,6 +49,15 @@ function IconTrash() {
   )
 }
 
+function IconEdit() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+  )
+}
+
 function IconImage() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -63,6 +72,50 @@ function IconComment() {
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
     </svg>
   )
+}
+
+const EMOJIS = [
+  "😀","😂","😍","😊","🥰","😎","🤩","🥳","😅","😭","😤","🙄","😬","🤔","😴",
+  "💪","🙌","👏","🤸","🤗","🙏","👍","👎","💃","🕺","🤜","🤛","✌️","🫶",
+  "🎪","🎭","🎉","🎊","🎈","🏆","🥇","🌟","⭐","🔥","💫","✨","🌈","🦋","🎯",
+  "❤️","🧡","💛","💚","💙","💜","🤍","🖤","💔","💕","💞","💓","💗","💖","💝",
+]
+
+function EmojiPicker({ onSelect, onClose }: { onSelect: (e: string) => void; onClose: () => void }) {
+  return (
+    <div
+      className="absolute z-50 rounded-2xl p-3 shadow-xl"
+      style={{ background: "var(--surface)", border: "1px solid var(--border)", bottom: "100%", marginBottom: 4, left: 0, width: 280 }}
+    >
+      <div className="flex flex-wrap gap-1">
+        {EMOJIS.map((emoji) => (
+          <button
+            key={emoji}
+            type="button"
+            onClick={() => { onSelect(emoji); onClose() }}
+            className="text-xl w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--surface-2)] transition-colors active:scale-90"
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function useEmojiInsert(ref: React.RefObject<HTMLTextAreaElement | null>, setValue: (v: string) => void) {
+  return (emoji: string) => {
+    const el = ref.current
+    if (!el) return
+    const start = el.selectionStart ?? el.value.length
+    const end = el.selectionEnd ?? el.value.length
+    const newVal = el.value.slice(0, start) + emoji + el.value.slice(end)
+    setValue(newVal)
+    setTimeout(() => {
+      el.focus()
+      el.setSelectionRange(start + emoji.length, start + emoji.length)
+    }, 0)
+  }
 }
 
 async function compressImage(file: File, maxWidth = 1200, quality = 0.72): Promise<string> {
@@ -108,7 +161,12 @@ function CommentLikeButton({ commentId, initialLikes, currentUserId }: { comment
   )
 }
 
-function PostCard({ post, currentUserId, onDelete }: { post: Post; currentUserId: string; onDelete: (id: string) => void }) {
+function PostCard({ post, currentUserId, onDelete, onEdit }: {
+  post: Post
+  currentUserId: string
+  onDelete: (id: string) => void
+  onEdit: (id: string, content: string) => void
+}) {
   const likedByMe = post.likes.some((l) => l.userId === currentUserId)
   const [liked, setLiked] = useState(likedByMe)
   const [likeCount, setLikeCount] = useState(post.likes.length)
@@ -120,6 +178,13 @@ function PostCard({ post, currentUserId, onDelete }: { post: Post; currentUserId
   const [commentCount, setCommentCount] = useState(post._count.comments)
   const [deleting, setDeleting] = useState(false)
   const [imageIndex, setImageIndex] = useState(0)
+
+  const [editing, setEditing] = useState(false)
+  const [editContent, setEditContent] = useState(post.content)
+  const [editLoading, setEditLoading] = useState(false)
+  const [showEditEmoji, setShowEditEmoji] = useState(false)
+  const editRef = useRef<HTMLTextAreaElement>(null)
+  const insertEditEmoji = useEmojiInsert(editRef, setEditContent)
 
   const images = post.imageUrl ? post.imageUrl.split("|||") : []
   const isAuthor = post.author.id === currentUserId
@@ -163,6 +228,22 @@ function PostCard({ post, currentUserId, onDelete }: { post: Post; currentUserId
     onDelete(post.id)
   }
 
+  async function handleEdit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editContent.trim() || editContent.trim() === post.content) { setEditing(false); return }
+    setEditLoading(true)
+    const res = await fetch(`/api/posts/${post.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: editContent.trim() }),
+    })
+    setEditLoading(false)
+    if (res.ok) {
+      onEdit(post.id, editContent.trim())
+      setEditing(false)
+    }
+  }
+
   return (
     <div
       className="rounded-2xl overflow-hidden"
@@ -175,24 +256,63 @@ function PostCard({ post, currentUserId, onDelete }: { post: Post; currentUserId
           <span className="user-name text-sm font-semibold">{post.author.name}</span>
           <span className="text-xs text-[var(--muted)] ml-2">{timeAgo(post.createdAt)}</span>
         </div>
-        {isAuthor && (
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="p-1.5 rounded-lg transition-colors hover:bg-[var(--surface-2)] text-[var(--muted)] hover:text-[var(--danger,#e05c7a)]"
-          >
-            <IconTrash />
-          </button>
+        {isAuthor && !editing && (
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => { setEditing(true); setEditContent(post.content); setTimeout(() => editRef.current?.focus(), 50) }}
+              className="p-1.5 rounded-lg transition-colors hover:bg-[var(--surface-2)] text-[var(--muted)] hover:text-[var(--primary)]"
+            >
+              <IconEdit />
+            </button>
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="p-1.5 rounded-lg transition-colors hover:bg-[var(--surface-2)] text-[var(--muted)] hover:text-[var(--danger,#e05c7a)]"
+            >
+              <IconTrash />
+            </button>
+          </div>
         )}
       </div>
 
-      {/* Content */}
+      {/* Content / Edit mode */}
       <div className="px-4 pb-3">
-        <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text)" }}>{post.content}</p>
+        {editing ? (
+          <form onSubmit={handleEdit} className="space-y-2">
+            <div className="relative">
+              <textarea
+                ref={editRef}
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                rows={4}
+                className="w-full rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:border-[var(--primary)] transition-colors"
+                style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
+              />
+              {showEditEmoji && (
+                <EmojiPicker onSelect={insertEditEmoji} onClose={() => setShowEditEmoji(false)} />
+              )}
+            </div>
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setShowEditEmoji((v) => !v)}
+                className="text-lg px-1 transition-opacity hover:opacity-70"
+              >
+                😊
+              </button>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" type="button" onClick={() => { setEditing(false); setShowEditEmoji(false) }}>Cancelar</Button>
+                <Button size="sm" type="submit" loading={editLoading} disabled={!editContent.trim()}>Salvar</Button>
+              </div>
+            </div>
+          </form>
+        ) : (
+          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text)" }}>{post.content}</p>
+        )}
       </div>
 
       {/* Images */}
-      {images.length > 0 && (
+      {!editing && images.length > 0 && (
         <div className="px-4 pb-3">
           <div className="relative">
             <img
@@ -246,27 +366,29 @@ function PostCard({ post, currentUserId, onDelete }: { post: Post; currentUserId
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-1 px-3 pb-3 border-t border-[var(--border)] pt-3">
-        <button
-          onClick={toggleLike}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all duration-150 hover:bg-[var(--surface-2)] active:scale-95"
-          style={{ color: liked ? "var(--danger, #e05c7a)" : "var(--muted)" }}
-        >
-          <IconHeart filled={liked} />
-          <span className="font-medium">{likeCount > 0 ? likeCount : ""}</span>
-        </button>
-        <button
-          onClick={loadComments}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all duration-150 hover:bg-[var(--surface-2)]"
-          style={{ color: showComments ? "var(--text)" : "var(--muted)" }}
-        >
-          <IconComment />
-          <span>{commentCount > 0 ? commentCount : ""}</span>
-        </button>
-      </div>
+      {!editing && (
+        <div className="flex items-center gap-1 px-3 pb-3 border-t border-[var(--border)] pt-3">
+          <button
+            onClick={toggleLike}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all duration-150 hover:bg-[var(--surface-2)] active:scale-95"
+            style={{ color: liked ? "var(--danger, #e05c7a)" : "var(--muted)" }}
+          >
+            <IconHeart filled={liked} />
+            <span className="font-medium">{likeCount > 0 ? likeCount : ""}</span>
+          </button>
+          <button
+            onClick={loadComments}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all duration-150 hover:bg-[var(--surface-2)]"
+            style={{ color: showComments ? "var(--text)" : "var(--muted)" }}
+          >
+            <IconComment />
+            <span>{commentCount > 0 ? commentCount : ""}</span>
+          </button>
+        </div>
+      )}
 
       {/* Comments */}
-      {showComments && (
+      {showComments && !editing && (
         <div className="border-t border-[var(--border)] px-4 py-3 space-y-3" style={{ background: "var(--surface-2)" }}>
           {comments.map((c) => (
             <div key={c.id} className="flex gap-2.5">
@@ -308,7 +430,10 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
   const [images, setImages] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const [showEmoji, setShowEmoji] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const insertEmoji = useEmojiInsert(textareaRef, setContent)
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
@@ -340,6 +465,7 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
     setPreviews([])
     setImages([])
     setExpanded(false)
+    setShowEmoji(false)
   }
 
   return (
@@ -348,6 +474,7 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
         <Avatar name={currentUserName} image={currentUserImage} size="sm" />
         <div className="flex-1">
           <textarea
+            ref={textareaRef}
             placeholder="Compartilhe algo com a turma..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
@@ -373,17 +500,33 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
           )}
 
           {expanded && (
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--border)]">
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="flex items-center gap-1.5 text-xs text-[var(--muted)] hover:text-[var(--primary)] transition-colors"
-              >
-                <IconImage />
-                Fotos
-              </button>
-              <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
-              <Button size="sm" loading={loading} disabled={!content.trim()} onClick={handleSubmit}>Publicar</Button>
+            <div className="mt-3 pt-3 border-t border-[var(--border)]">
+              <div className="relative flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setShowEmoji((v) => !v)}
+                      className="text-lg transition-opacity hover:opacity-70"
+                    >
+                      😊
+                    </button>
+                    {showEmoji && (
+                      <EmojiPicker onSelect={(e) => { insertEmoji(e); setShowEmoji(false) }} onClose={() => setShowEmoji(false)} />
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="flex items-center gap-1.5 text-xs text-[var(--muted)] hover:text-[var(--primary)] transition-colors"
+                  >
+                    <IconImage />
+                    Fotos
+                  </button>
+                  <input ref={fileRef} type="file" accept="image/*" multiple onChange={handleFileChange} className="hidden" />
+                </div>
+                <Button size="sm" loading={loading} disabled={!content.trim()} onClick={handleSubmit}>Publicar</Button>
+              </div>
             </div>
           )}
         </div>
@@ -413,6 +556,10 @@ export function FeedClient({ initialPosts, nextCursor: initCursor, currentUserId
     setPosts((p) => p.filter((post) => post.id !== id))
   }
 
+  function editPost(id: string, content: string) {
+    setPosts((p) => p.map((post) => post.id === id ? { ...post, content } : post))
+  }
+
   const loadMore = useCallback(async () => {
     if (!cursor || loadingMore) return
     setLoadingMore(true)
@@ -435,7 +582,7 @@ export function FeedClient({ initialPosts, nextCursor: initCursor, currentUserId
       )}
 
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} currentUserId={currentUserId} onDelete={removePost} />
+        <PostCard key={post.id} post={post} currentUserId={currentUserId} onDelete={removePost} onEdit={editPost} />
       ))}
 
       {cursor && (
