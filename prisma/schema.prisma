@@ -30,6 +30,9 @@ model User {
   recordedStars StarRecord[] @relation("RecorderRecords")
   classes       Class[]
   passwordResets PasswordReset[]
+  posts         Post[]
+  postLikes     PostLike[]
+  postComments  PostComment[]
 }
 
 model Account {
@@ -105,4 +108,43 @@ model StarRecord {
   recordedBy User  @relation("RecorderRecords", fields: [recordedById], references: [id])
 
   @@unique([classId, studentId])
+}
+
+model Post {
+  id        String   @id @default(cuid())
+  authorId  String
+  content   String   @db.Text
+  imageUrl  String?  @db.Text
+  createdAt DateTime @default(now())
+
+  author   User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes    PostLike[]
+  comments PostComment[]
+
+  @@map("Post")
+}
+
+model PostLike {
+  id     String @id @default(cuid())
+  postId String
+  userId String
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("PostLike")
+}
+
+model PostComment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@map("PostComment")
 }

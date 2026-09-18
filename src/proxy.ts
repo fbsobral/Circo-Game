@@ -12,11 +12,11 @@ export default auth((req) => {
   }
 
   if (session && pathname === "/login") {
-    return NextResponse.redirect(new URL("/ranking", req.url))
+    return NextResponse.redirect(new URL("/feed", req.url))
   }
 
-  if (session && pathname === "/dashboard") {
-    return NextResponse.redirect(new URL("/ranking", req.url))
+  if (session && (pathname === "/" || pathname === "/dashboard")) {
+    return NextResponse.redirect(new URL("/feed", req.url))
   }
 
   const role = (session?.user as { role?: string })?.role
@@ -29,7 +29,7 @@ export default auth((req) => {
   }
 
   if (pathname.startsWith("/admin") && !isAdmin) {
-    return NextResponse.redirect(new URL("/ranking", req.url))
+    return NextResponse.redirect(new URL("/feed", req.url))
   }
 
   if ((pathname.startsWith("/aulas/nova") || pathname.endsWith("/estrelas") || pathname.startsWith("/usuarios")) && !isProfessorOrAdmin) {
