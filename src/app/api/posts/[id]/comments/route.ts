@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { notifyMentions } from "@/lib/mentions"
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -33,5 +34,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       likes: { select: { userId: true } },
     },
   })
+  const baseUrl = process.env.NEXTAUTH_URL ?? `https://${req.headers.get("host")}`
+  notifyMentions(comment.content, session.user.id, comment.author.name ?? "Alguém", "comment", id, baseUrl)
+
   return NextResponse.json({ ...comment, createdAt: comment.createdAt.toISOString() }, { status: 201 })
 }

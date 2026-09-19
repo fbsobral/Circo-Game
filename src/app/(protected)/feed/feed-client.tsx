@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { Avatar } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 
@@ -72,6 +72,102 @@ function IconComment() {
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
     </svg>
   )
+}
+
+interface MentionUser { id: string; name: string | null; image: string | null }
+
+function highlightMentions(text: string) {
+  const parts = text.split(/(@\S+(?:\s+\S+)*)/g)
+  return parts.map((part, i) =>
+    part.startsWith("@")
+      ? <span key={i} style={{ color: "var(--primary)", fontWeight: 600 }}>{part}</span>
+      : part
+  )
+}
+
+function useMentionUsers() {
+  const [users, setUsers] = useState<MentionUser[]>([])
+  const loaded = useRef(false)
+  const load = useCallback(async () => {
+    if (loaded.current) return
+    loaded.current = true
+    const res = await fetch("/api/users")
+    if (res.ok) setUsers(await res.json())
+  }, [])
+  return { users, load }
+}
+
+function MentionDropdown({
+  users, query, onSelect,
+}: { users: MentionUser[]; query: string; onSelect: (name: string) => void }) {
+  const filtered = users.filter((u) => u.name?.toLowerCase().includes(query.toLowerCase())).slice(0, 6)
+  if (!filtered.length) return null
+  return (
+    <div
+      className="absolute z-50 rounded-xl shadow-xl overflow-hidden"
+      style={{ background: "var(--surface)", border: "1px solid var(--border)", bottom: "100%", marginBottom: 4, left: 0, minWidth: 200 }}
+    >
+      {filtered.map((u) => (
+        <button
+          key={u.id}
+          type="button"
+          onMouseDown={(e) => { e.preventDefault(); onSelect(u.name ?? "") }}
+          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left hover:bg-[var(--surface-2)] transition-colors"
+        >
+          <Avatar name={u.name} image={u.image} size="sm" />
+          <span>{u.name}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function useMentionAutocomplete(
+  ref: React.RefObject<HTMLTextAreaElement | null>,
+  value: string,
+  setValue: (v: string) => void,
+  users: MentionUser[],
+  onFocusMentions: () => void,
+) {
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null)
+  const [mentionStart, setMentionStart] = useState(0)
+
+  function onKeyUp() {
+    const el = ref.current
+    if (!el) return
+    const cursor = el.selectionStart ?? 0
+    const before = el.value.slice(0, cursor)
+    const match = before.match(/@(\w[\w\s]*)$/)
+    if (match) {
+      setMentionQuery(match[1])
+      setMentionStart(cursor - match[0].length)
+      onFocusMentions()
+    } else if (before.endsWith("@")) {
+      setMentionQuery("")
+      setMentionStart(cursor - 1)
+      onFocusMentions()
+    } else {
+      setMentionQuery(null)
+    }
+  }
+
+  function selectMention(name: string) {
+    const el = ref.current
+    if (!el) return
+    const cursor = el.selectionStart ?? value.length
+    const before = value.slice(0, mentionStart)
+    const after = value.slice(cursor)
+    const newVal = `${before}@${name} ${after}`
+    setValue(newVal)
+    setMentionQuery(null)
+    setTimeout(() => {
+      el.focus()
+      const pos = mentionStart + name.length + 2
+      el.setSelectionRange(pos, pos)
+    }, 0)
+  }
+
+  return { mentionQuery, selectMention, onKeyUp }
 }
 
 const EMOJIS = [
@@ -175,6 +271,9 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
   const [commentsLoaded, setCommentsLoaded] = useState(false)
   const [commentText, setCommentText] = useState("")
   const [commentLoading, setCommentLoading] = useState(false)
+  const commentRef = useRef<HTMLTextAreaElement>(null)
+  const { users: commentUsers, load: loadCommentUsers } = useMentionUsers()
+  const { mentionQuery: commentMentionQuery, selectMention: selectCommentMention, onKeyUp: commentOnKeyUp } = useMentionAutocomplete(commentRef, commentText, setCommentText, commentUsers, loadCommentUsers)
   const [commentCount, setCommentCount] = useState(post._count.comments)
   const [deleting, setDeleting] = useState(false)
   const [imageIndex, setImageIndex] = useState(0)
@@ -185,6 +284,8 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
   const [showEditEmoji, setShowEditEmoji] = useState(false)
   const editRef = useRef<HTMLTextAreaElement>(null)
   const insertEditEmoji = useEmojiInsert(editRef, setEditContent)
+  const { users: editUsers, load: loadEditUsers } = useMentionUsers()
+  const { mentionQuery: editMentionQuery, selectMention: selectEditMention, onKeyUp: editOnKeyUp } = useMentionAutocomplete(editRef, editContent, setEditContent, editUsers, loadEditUsers)
 
   const images = post.imageUrl ? post.imageUrl.split("|||") : []
   const isAuthor = post.author.id === currentUserId
@@ -284,10 +385,15 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
                 ref={editRef}
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
+                onFocus={loadEditUsers}
+                onKeyUp={editOnKeyUp}
                 rows={4}
                 className="w-full rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:border-[var(--primary)] transition-colors"
                 style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
               />
+              {editMentionQuery !== null && (
+                <MentionDropdown users={editUsers} query={editMentionQuery} onSelect={selectEditMention} />
+              )}
               {showEditEmoji && (
                 <EmojiPicker onSelect={insertEditEmoji} onClose={() => setShowEditEmoji(false)} />
               )}
@@ -307,7 +413,7 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
             </div>
           </form>
         ) : (
-          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text)" }}>{post.content}</p>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text)" }}>{highlightMentions(post.content)}</p>
         )}
       </div>
 
@@ -396,7 +502,7 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
               <div className="flex-1 min-w-0">
                 <div className="rounded-xl px-3 py-2" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
                   <span className="user-name text-xs font-semibold mr-2">{c.author.name}</span>
-                  <span className="text-sm leading-relaxed">{c.content}</span>
+                  <span className="text-sm leading-relaxed">{highlightMentions(c.content)}</span>
                 </div>
                 <div className="flex items-center gap-3 pl-3 mt-1">
                   <span className="text-[10px] text-[var(--muted)]">{timeAgo(c.createdAt)}</span>
@@ -407,15 +513,28 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
           ))}
 
           <form onSubmit={submitComment} className="flex gap-2 pt-1">
-            <textarea
-              placeholder="Escreva um comentário..."
-              value={commentText}
-              onChange={(e) => setCommentText(e.target.value)}
-              rows={1}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitComment(e as unknown as React.FormEvent) } }}
-              className="flex-1 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:border-[var(--primary)] transition-colors"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
-            />
+            <div className="relative flex-1">
+              <textarea
+                ref={commentRef}
+                placeholder="Escreva um comentário..."
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onFocus={loadCommentUsers}
+                onKeyUp={commentOnKeyUp}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey && commentMentionQuery === null) {
+                    e.preventDefault()
+                    submitComment(e as unknown as React.FormEvent)
+                  }
+                }}
+                rows={1}
+                className="w-full rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:border-[var(--primary)] transition-colors"
+                style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
+              />
+              {commentMentionQuery !== null && (
+                <MentionDropdown users={commentUsers} query={commentMentionQuery} onSelect={selectCommentMention} />
+              )}
+            </div>
             <Button type="submit" size="sm" loading={commentLoading} disabled={!commentText.trim()}>↑</Button>
           </form>
         </div>
@@ -434,6 +553,8 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
   const fileRef = useRef<HTMLInputElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const insertEmoji = useEmojiInsert(textareaRef, setContent)
+  const { users, load: loadUsers } = useMentionUsers()
+  const { mentionQuery, selectMention, onKeyUp } = useMentionAutocomplete(textareaRef, content, setContent, users, loadUsers)
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
@@ -473,16 +594,22 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
       <div className="flex gap-3">
         <Avatar name={currentUserName} image={currentUserImage} size="sm" />
         <div className="flex-1">
-          <textarea
-            ref={textareaRef}
-            placeholder="Compartilhe algo com a turma..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onFocus={() => setExpanded(true)}
-            rows={expanded ? 3 : 1}
-            className="w-full bg-transparent text-sm resize-none focus:outline-none leading-relaxed"
-            style={{ color: "var(--text)", caretColor: "var(--primary)", fontSize: "16px" }}
-          />
+          <div className="relative">
+            <textarea
+              ref={textareaRef}
+              placeholder="Compartilhe algo com a turma..."
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              onFocus={() => { setExpanded(true); loadUsers() }}
+              onKeyUp={onKeyUp}
+              rows={expanded ? 3 : 1}
+              className="w-full bg-transparent text-sm resize-none focus:outline-none leading-relaxed"
+              style={{ color: "var(--text)", caretColor: "var(--primary)", fontSize: "16px" }}
+            />
+            {mentionQuery !== null && (
+              <MentionDropdown users={users} query={mentionQuery} onSelect={selectMention} />
+            )}
+          </div>
 
           {previews.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-2">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { notifyMentions } from "@/lib/mentions"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -45,6 +46,9 @@ export async function POST(req: NextRequest) {
       _count: { select: { comments: true } },
     },
   })
+
+  const baseUrl = process.env.NEXTAUTH_URL ?? `https://${req.headers.get("host")}`
+  notifyMentions(post.content, session.user.id, post.author.name ?? "Alguém", "post", post.id, baseUrl)
 
   return NextResponse.json(post, { status: 201 })
 }

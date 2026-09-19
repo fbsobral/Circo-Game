@@ -97,3 +97,32 @@ export async function sendStarsNotificationEmail(
     `,
   })
 }
+
+export async function sendMentionEmail(
+  email: string,
+  mentionedName: string,
+  authorName: string,
+  context: "post" | "comment",
+  postUrl: string,
+  preview: string,
+) {
+  await getResend().emails.send({
+    from,
+    to: email,
+    subject: `${authorName} marcou você no feed — Circo Game`,
+    html: `
+      <div style="background:#0d0d14;color:#f0eeee;font-family:sans-serif;padding:40px;max-width:500px;margin:0 auto;border-radius:12px;">
+        ${emailLogo}
+        <p>Olá, <strong>${mentionedName}</strong>!</p>
+        <p><strong>${authorName}</strong> marcou você em um ${context === "post" ? "post" : "comentário"} no feed:</p>
+        <div style="background:#16162a;border-radius:12px;padding:20px;margin:24px 0;border-left:3px solid #c9a84c;">
+          <p style="margin:0;font-size:14px;color:#d0d0e0;font-style:italic;">"${preview}"</p>
+        </div>
+        <a href="${postUrl}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 24px;">
+          Ver no feed
+        </a>
+        <p style="color:#8888aa;font-size:12px;margin-top:32px;">Circo Game — Plataforma de gamificação para turmas de circo.</p>
+      </div>
+    `,
+  })
+}
