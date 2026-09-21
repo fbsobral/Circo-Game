@@ -13,7 +13,7 @@ export default async function EsteralasPage({ params }: { params: Promise<{ id: 
 
   const [cls, students, existingRecords] = await Promise.all([
     db.class.findUnique({ where: { id }, select: { id: true, title: true, date: true } }),
-    db.user.findMany({ where: { role: "student" }, select: { id: true, name: true, image: true }, orderBy: { name: "asc" } }),
+    db.user.findMany({ where: { role: { in: ["student", "admin"] } }, select: { id: true, name: true, image: true }, orderBy: { name: "asc" } }),
     db.starRecord.findMany({ where: { classId: id }, select: { studentId: true, stars: true, note: true } }),
   ])
 
