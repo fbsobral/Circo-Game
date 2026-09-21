@@ -112,11 +112,20 @@ function MentionDropdown({
   users, query, onSelect,
 }: { users: MentionUser[]; query: string; onSelect: (name: string) => void }) {
   const filtered = users.filter((u) => u.name?.toLowerCase().includes(query.toLowerCase())).slice(0, 6)
+  const ref = useRef<HTMLDivElement>(null)
+  const flipUp = useFlipUp(ref)
   if (!filtered.length) return null
   return (
     <div
+      ref={ref}
       className="absolute z-50 rounded-xl shadow-xl overflow-hidden"
-      style={{ background: "var(--surface)", border: "1px solid var(--border)", bottom: "100%", marginBottom: 4, left: 0, minWidth: 200 }}
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        ...(flipUp ? { bottom: "100%", marginBottom: 4 } : { top: "100%", marginTop: 4 }),
+        left: 0,
+        minWidth: 200,
+      }}
     >
       {filtered.map((u) => (
         <button
@@ -188,11 +197,32 @@ const EMOJIS = [
   "❤️","🧡","💛","💚","💙","💜","🤍","🖤","💔","💕","💞","💓","💗","💖","💝",
 ]
 
+function useFlipUp(ref: React.RefObject<HTMLDivElement | null>) {
+  const [flipUp, setFlipUp] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const rect = el.getBoundingClientRect()
+    if (rect.bottom > window.innerHeight - 8) setFlipUp(true)
+    else setFlipUp(false)
+  }, [ref])
+  return flipUp
+}
+
 function EmojiPicker({ onSelect, onClose }: { onSelect: (e: string) => void; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null)
+  const flipUp = useFlipUp(ref)
   return (
     <div
+      ref={ref}
       className="absolute z-50 rounded-2xl p-3 shadow-xl"
-      style={{ background: "var(--surface)", border: "1px solid var(--border)", bottom: "100%", marginBottom: 4, left: 0, width: 280 }}
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        ...(flipUp ? { bottom: "100%", marginBottom: 4 } : { top: "100%", marginTop: 4 }),
+        left: 0,
+        width: 280,
+      }}
     >
       <div className="flex flex-wrap gap-1">
         {EMOJIS.map((emoji) => (
