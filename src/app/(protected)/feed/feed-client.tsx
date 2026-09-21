@@ -66,6 +66,17 @@ function IconImage() {
   )
 }
 
+function IconSmile() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M8 13s1.5 2 4 2 4-2 4-2"/>
+      <line x1="9" y1="9" x2="9.01" y2="9"/>
+      <line x1="15" y1="9" x2="15.01" y2="9"/>
+    </svg>
+  )
+}
+
 function IconComment() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -402,9 +413,10 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
               <button
                 type="button"
                 onClick={() => setShowEditEmoji((v) => !v)}
-                className="text-lg px-1 transition-opacity hover:opacity-70"
+                className="flex items-center gap-1.5 text-xs text-[var(--muted)] hover:text-[var(--primary)] transition-colors"
               >
-                😊
+                <IconSmile />
+                Emoji
               </button>
               <div className="flex gap-2">
                 <Button size="sm" variant="outline" type="button" onClick={() => { setEditing(false); setShowEditEmoji(false) }}>Cancelar</Button>
@@ -634,9 +646,10 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
                     <button
                       type="button"
                       onClick={() => setShowEmoji((v) => !v)}
-                      className="text-lg transition-opacity hover:opacity-70"
+                      className="flex items-center gap-1.5 text-xs text-[var(--muted)] hover:text-[var(--primary)] transition-colors"
                     >
-                      😊
+                      <IconSmile />
+                      Emoji
                     </button>
                     {showEmoji && (
                       <EmojiPicker onSelect={(e) => { insertEmoji(e); setShowEmoji(false) }} onClose={() => setShowEmoji(false)} />
