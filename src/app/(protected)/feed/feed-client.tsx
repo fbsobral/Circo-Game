@@ -190,51 +190,128 @@ function useMentionAutocomplete(
   return { mentionQuery, selectMention, onKeyUp }
 }
 
-const EMOJIS = [
-  "😀","😂","😍","😊","🥰","😎","🤩","🥳","😅","😭","😤","🙄","😬","🤔","😴",
-  "💪","🙌","👏","🤸","🤗","🙏","👍","👎","💃","🕺","🤜","🤛","✌️","🫶",
-  "🎪","🎭","🎉","🎊","🎈","🏆","🥇","🌟","⭐","🔥","💫","✨","🌈","🦋","🎯",
-  "❤️","🧡","💛","💚","💙","💜","🤍","🖤","💔","💕","💞","💓","💗","💖","💝",
+const EMOJI_CATEGORIES: { label: string; emojis: string[] }[] = [
+  { label: "Recentes", emojis: [] },
+  { label: "😀 Rostos", emojis: ["😀","😃","😄","😁","😆","😅","🤣","😂","🙂","🙃","😉","😊","😇","🥰","😍","🤩","😘","😗","☺️","😚","😙","🥲","😋","😛","😜","🤪","😝","🤑","🤗","🤭","🫢","🫣","🤫","🤔","🫡","🤐","🤨","😐","😑","😶","🫥","😏","😒","🙄","😬","🤥","😌","😔","😪","🤤","😴","😷","🤒","🤕","🤢","🤮","🤧","🥵","🥶","🥴","😵","💫","🤯","🤠","🥸","🤓","🧐","😕","🫤","😟","🙁","☹️","😮","😯","😲","😳","🥺","🫣","😦","😧","😨","😰","😥","😢","😭","😱","😖","😣","😞","😓","😩","😫","🥱","😤","😡","😠","🤬","😈","👿","💀","☠️","💩","🤡","👹","👺","👻","👽","👾","🤖"] },
+  { label: "👋 Gestos", emojis: ["👋","🤚","🖐️","✋","🖖","🫱","🫲","🫳","🫴","🫷","🫸","👌","🤌","🤏","✌️","🤞","🫰","🤟","🤘","🤙","👈","👉","👆","🖕","👇","☝️","🫵","👍","👎","✊","👊","🤛","🤜","👏","🙌","🫶","👐","🤲","🤝","🙏","✍️","💅","🤳","💪","🦾","🦵","🦶","👂","🦻","👃","👀","🫦","🧠","🦷","🦴","👣"] },
+  { label: "🐶 Animais", emojis: ["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐨","🐯","🦁","🐮","🐷","🐸","🐵","🙈","🙉","🙊","🐔","🐧","🐦","🐤","🦆","🦅","🦉","🦇","🐺","🐗","🐴","🦄","🐝","🪱","🐛","🦋","🐌","🐞","🐜","🪲","🦟","🦗","🦂","🐢","🐍","🦎","🦖","🦕","🐙","🦑","🦐","🦞","🦀","🐡","🐠","🐟","🐬","🐳","🐋","🦈","🦭","🐊","🐅","🐆","🦓","🦍","🦧","🦣","🐘","🦛","🦏","🐪","🐫","🦒","🦘","🦬","🐃","🐂","🐄","🐎","🐖","🐏","🐑","🦙","🐐","🦌","🐕","🐩","🐈","🐓","🦃","🦤","🦚","🦜","🦢","🦩","🕊️","🐇","🦝","🦨","🦡","🦫","🦦","🦥","🐁","🐀","🦔"] },
+  { label: "🌱 Natureza", emojis: ["🌵","🎄","🌲","🌳","🌴","🪵","🌱","🌿","☘️","🍀","🎍","🎋","🪴","🍃","🍂","🍁","🍄","🌾","💐","🌷","🌹","🥀","🪻","🌺","🌸","🌼","🌻","🌞","🌝","🌛","🌜","🌚","🌕","🌖","🌗","🌘","🌑","🌒","🌓","🌔","🌙","🌟","⭐","🌠","☀️","🌤️","⛅","🌥️","☁️","🌦️","🌧️","⛈️","🌩️","🌨️","❄️","☃️","⛄","🌬️","🌀","🌈","⚡","🌊","🌫️","💧","💦","🔥"] },
+  { label: "🍎 Comida", emojis: ["🍏","🍎","🍐","🍊","🍋","🍌","🍉","🍇","🍓","🫐","🍈","🍑","🍒","🥭","🍍","🥥","🥝","🍅","🫒","🥑","🍆","🥦","🥬","🥒","🌶️","🧄","🧅","🥕","🌽","🥗","🥙","🧆","🥚","🍳","🥘","🍲","🌯","🌮","🥪","🧀","🍞","🥐","🥖","🧇","🥞","🧈","🍱","🍣","🍜","🍝","🍛","🍚","🍙","🍘","🥟","🦪","🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🍫","🍬","🍭","🍮","🍯","🍼","🥛","☕","🍵","🧃","🥤","🧋","🍶","🍺","🍻","🥂","🍷","🥃","🍸","🍹","🧉","🍾"] },
+  { label: "⚽ Esportes", emojis: ["⚽","🏀","🏈","⚾","🥎","🎾","🏐","🏉","🥏","🎱","🏓","🏸","🏒","🥍","🏑","🏏","⛳","🎣","🤿","🎽","🎿","🛷","🥌","🥊","🥋","⛸️","🛼","🎯","🎳","🏹","⛷️","🏂","🪂","🏋️","🤼","🤺","🤸","⛹️","🏌️","🏇","🧘","🏄","🚣","🧗","🚵","🚴","🤾","🏆","🥇","🥈","🥉","🎖️","🏅","🎪","🎭","🎨","🎰","🎲","🧩","🎮","🕹️","🎸","🎺","🎻","🥁","🎷","🎤","🎧","🎼","🎬","🎥"] },
+  { label: "✈️ Viagem", emojis: ["🚗","🚕","🚙","🏎️","🚓","🚑","🚒","🚐","🛻","🚚","🚛","🚜","🛵","🏍️","🚲","🛴","🛹","🚏","⛽","🚨","🚥","🚦","🛑","🚤","⛵","🛶","🚢","✈️","🛫","🛬","🪂","💺","🚁","🛸","🚀","🛰️","🏔️","⛰️","🌋","🗻","🏕️","🏖️","🏜️","🏝️","🏟️","🏛️","🏗️","🏘️","🏠","🏡","🏢","🏣","🏤","🏥","🏦","🏨","🏩","🏪","🏫","🏬","🏭","🏯","🏰","💒","🗼","🗽","⛪","🕌","🛕","⛩️"] },
+  { label: "💡 Objetos", emojis: ["📱","💻","🖥️","⌨️","🖱️","💽","💾","💿","📀","🎥","📽️","📺","📷","📹","📼","🔋","🔌","💡","🔦","🕯️","🧯","🛢️","💸","💵","💳","💎","⚖️","🧰","🔧","🔨","⛏️","🛠️","🗡️","⚔️","🛡️","🪚","🔩","🔫","🏹","🧱","🛏️","🛋️","🚪","🧴","🧹","🧺","🧻","🚿","🛁","🧼","🪒","🧽","🛒","🎁","📦","📬","📝","📎","📏","📐","✂️","🔒","🔓","🔑","🗝️","🔗","🧲","🪞","🪟","🧸","🎎","🎐","🎀","🎗️","🎟️","🎫","📡","🔭","🔬","💊","💉","🩹","🩺","🧬"] },
+  { label: "❤️ Símbolos", emojis: ["❤️","🧡","💛","💚","💙","💜","🖤","🤍","🤎","💔","❣️","💕","💞","💓","💗","💖","💘","💝","💟","☮️","✝️","☪️","🕉️","☸️","✡️","🔯","🕎","☯️","☦️","⭐","🌟","✨","💫","🔥","💥","❄️","🌈","🎵","🎶","🔔","🔕","🔇","🔊","📣","📢","🔞","📵","🚫","💯","❌","✅","❎","🔴","🟠","🟡","🟢","🔵","🟣","⚫","⚪","🔺","🔻","⬛","⬜","♾️","♻️","✔️","☑️","⚜️","🔰","🔄","⏩","⏪","▶️","⏸️","🆕","🆓","🆒","🆗","🆙","🆚","🆘","🔝","🔛","🔜","🔙"] },
 ]
 
-function useFlipUp(ref: React.RefObject<HTMLDivElement | null>) {
+const ALL_EMOJIS = EMOJI_CATEGORIES.flatMap(c => c.emojis)
+
+function useFlipUp(ref: React.RefObject<HTMLDivElement | null>, extraHeight = 0) {
   const [flipUp, setFlipUp] = useState(false)
   useEffect(() => {
     const el = ref.current
     if (!el) return
     const rect = el.getBoundingClientRect()
-    if (rect.bottom > window.innerHeight - 8) setFlipUp(true)
+    const totalBottom = rect.top + rect.height + extraHeight
+    if (totalBottom > window.innerHeight - 8) setFlipUp(true)
     else setFlipUp(false)
-  }, [ref])
+  }, [ref, extraHeight])
   return flipUp
 }
 
 function EmojiPicker({ onSelect, onClose }: { onSelect: (e: string) => void; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
-  const flipUp = useFlipUp(ref)
+  const [query, setQuery] = useState("")
+  const [activeCategory, setActiveCategory] = useState(1)
+  const flipUp = useFlipUp(ref, 340)
+
+  useEffect(() => {
+    const handler = (e: MouseEvent | TouchEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener("mousedown", handler)
+    document.addEventListener("touchstart", handler)
+    return () => {
+      document.removeEventListener("mousedown", handler)
+      document.removeEventListener("touchstart", handler)
+    }
+  }, [onClose])
+
+  const filtered = query.trim()
+    ? ALL_EMOJIS.filter(e => e.includes(query.trim()))
+    : EMOJI_CATEGORIES[activeCategory]?.emojis ?? []
+
   return (
     <div
       ref={ref}
-      className="absolute z-50 rounded-2xl p-3 shadow-xl"
+      className="absolute z-50 rounded-2xl shadow-xl flex flex-col"
       style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
         ...(flipUp ? { bottom: "100%", marginBottom: 4 } : { top: "100%", marginTop: 4 }),
         left: 0,
-        width: 280,
+        width: "min(320px, calc(100vw - 24px))",
       }}
+      onMouseDown={e => e.stopPropagation()}
     >
-      <div className="flex flex-wrap gap-1">
-        {EMOJIS.map((emoji) => (
-          <button
-            key={emoji}
-            type="button"
-            onClick={() => { onSelect(emoji); onClose() }}
-            className="text-xl w-9 h-9 rounded-lg flex items-center justify-center hover:bg-[var(--surface-2)] transition-colors active:scale-90"
-          >
-            {emoji}
-          </button>
-        ))}
+      {/* search */}
+      <div className="p-2 pb-0">
+        <input
+          type="text"
+          placeholder="Buscar emoji..."
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          className="w-full rounded-xl px-3 py-2 text-sm outline-none"
+          style={{
+            fontSize: 16,
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
+            color: "var(--foreground)",
+          }}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+        />
+      </div>
+
+      {/* category tabs */}
+      {!query.trim() && (
+        <div className="flex gap-1 px-2 pt-2 overflow-x-auto scrollbar-none">
+          {EMOJI_CATEGORIES.slice(1).map((cat, i) => (
+            <button
+              key={cat.label}
+              type="button"
+              onClick={() => setActiveCategory(i + 1)}
+              className="text-base flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+              style={{
+                background: activeCategory === i + 1 ? "var(--primary)" : "transparent",
+              }}
+              title={cat.label}
+            >
+              {cat.emojis[0]}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* grid */}
+      <div className="overflow-y-auto p-2" style={{ maxHeight: 240 }}>
+        {filtered.length === 0 ? (
+          <p className="text-center text-sm py-4" style={{ color: "var(--muted-foreground)" }}>Nenhum resultado</p>
+        ) : (
+          <div className="flex flex-wrap gap-1">
+            {filtered.map((emoji, idx) => (
+              <button
+                key={`${emoji}-${idx}`}
+                type="button"
+                onClick={() => { onSelect(emoji); onClose() }}
+                className="text-xl rounded-lg flex items-center justify-center hover:bg-[var(--surface-2)] transition-colors active:scale-90"
+                style={{ width: 36, height: 36, flexShrink: 0 }}
+              >
+                {emoji}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
