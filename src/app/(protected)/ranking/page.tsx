@@ -4,6 +4,7 @@ import { Avatar } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { Suspense } from "react"
 import { RankingFilters } from "./ranking-filters"
+import Link from "next/link"
 
 export default async function RankingPage({
   searchParams,
@@ -90,40 +91,42 @@ export default async function RankingPage({
             {(() => {
               const student = podium[1]
               return (
-                <div
-                  key={student.id}
-                  className="rounded-2xl p-5 text-center flex flex-col items-center gap-3 relative overflow-hidden"
-                  style={{
-                    background: "linear-gradient(160deg, #1e1a10 0%, #16142a 40%, #111120 100%)",
-                    border: "1px solid rgba(201,168,76,0.5)",
-                    boxShadow: "0 0 40px rgba(201,168,76,0.15), 0 20px 60px rgba(0,0,0,0.5)",
-                  }}
-                >
-                  <div className="absolute inset-x-0 top-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(201,168,76,0.8), transparent)" }} />
-                  <span className="text-3xl" style={{ filter: "drop-shadow(0 0 8px rgba(201,168,76,0.8))" }}>🥇</span>
-                  <Avatar name={student.name} image={student.image} size="lg" totalStars={student.totalStars} />
-                  <div className="w-full">
-                    <div className="user-name text-base font-semibold truncate" style={{ fontFamily: "var(--font-inter), sans-serif", textTransform: "none" }}>{student.name}</div>
-                    <div className="font-bold mt-1" style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.8rem", color: "var(--star-active)", textShadow: "0 0 20px rgba(240,192,64,0.5)" }}>{student.score.toFixed(1)} ★</div>
+                <Link href={`/perfil/${student.id}`} key={student.id}>
+                  <div
+                    className="rounded-2xl p-5 text-center flex flex-col items-center gap-3 relative overflow-hidden"
+                    style={{
+                      background: "linear-gradient(160deg, #1e1a10 0%, #16142a 40%, #111120 100%)",
+                      border: "1px solid rgba(201,168,76,0.5)",
+                      boxShadow: "0 0 40px rgba(201,168,76,0.15), 0 20px 60px rgba(0,0,0,0.5)",
+                    }}
+                  >
+                    <div className="absolute inset-x-0 top-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(201,168,76,0.8), transparent)" }} />
+                    <span className="text-3xl" style={{ filter: "drop-shadow(0 0 8px rgba(201,168,76,0.8))" }}>🥇</span>
+                    <Avatar name={student.name} image={student.image} size="lg" totalStars={student.totalStars} />
+                    <div className="w-full">
+                      <div className="user-name text-base font-semibold truncate" style={{ fontFamily: "var(--font-inter), sans-serif", textTransform: "none" }}>{student.name}</div>
+                      <div className="font-bold mt-1" style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.8rem", color: "var(--star-active)", textShadow: "0 0 20px rgba(240,192,64,0.5)" }}>{student.score.toFixed(1)} ★</div>
+                    </div>
                   </div>
-                </div>
+                </Link>
               )
             })()}
             {/* 2nd and 3rd */}
             <div className="grid grid-cols-2 gap-3">
               {[podium[0], podium[2]].map((student, i) => (
-                <div
-                  key={student.id}
-                  className="rounded-2xl p-4 text-center flex flex-col items-center gap-2 relative overflow-hidden opacity-90"
-                  style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}
-                >
-                  <span className="text-2xl">{i === 0 ? "🥈" : "🥉"}</span>
-                  <Avatar name={student.name} image={student.image} size="md" totalStars={student.totalStars} />
-                  <div className="w-full">
-                    <div className="user-name text-xs font-semibold truncate" style={{ fontFamily: "var(--font-inter), sans-serif", textTransform: "none" }}>{student.name}</div>
-                    <div className="font-bold mt-0.5" style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.1rem", color: "var(--primary)" }}>{student.score.toFixed(1)} ★</div>
+                <Link href={`/perfil/${student.id}`} key={student.id}>
+                  <div
+                    className="rounded-2xl p-4 text-center flex flex-col items-center gap-2 relative overflow-hidden opacity-90"
+                    style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}
+                  >
+                    <span className="text-2xl">{i === 0 ? "🥈" : "🥉"}</span>
+                    <Avatar name={student.name} image={student.image} size="md" totalStars={student.totalStars} />
+                    <div className="w-full">
+                      <div className="user-name text-xs font-semibold truncate" style={{ fontFamily: "var(--font-inter), sans-serif", textTransform: "none" }}>{student.name}</div>
+                      <div className="font-bold mt-0.5" style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.1rem", color: "var(--primary)" }}>{student.score.toFixed(1)} ★</div>
+                    </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
@@ -134,8 +137,8 @@ export default async function RankingPage({
               const actualPos = idx === 0 ? 1 : idx === 1 ? 0 : 2
               const isWinner = idx === 1
               return (
+                <Link href={`/perfil/${student.id}`} key={student.id}>
                 <div
-                  key={student.id}
                   className={cn(
                     "rounded-2xl p-5 text-center flex flex-col items-center gap-3 relative overflow-hidden transition-transform",
                     isWinner ? "scale-105" : "scale-100 opacity-90",
@@ -154,6 +157,7 @@ export default async function RankingPage({
                     <div className="font-bold mt-1" style={{ fontFamily: "var(--font-cormorant)", fontSize: isWinner ? "1.6rem" : "1.2rem", color: isWinner ? "var(--star-active)" : "var(--primary)", textShadow: isWinner ? "0 0 20px rgba(240,192,64,0.5)" : undefined }}>{student.score.toFixed(1)} ★</div>
                   </div>
                 </div>
+                </Link>
               )
             })}
           </div>
@@ -170,8 +174,9 @@ export default async function RankingPage({
           const medals = ["🥇", "🥈", "🥉"]
 
           return (
-            <div
+            <Link
               key={student.id}
+              href={`/perfil/${student.id}`}
               className={cn(
                 "flex items-center gap-4 px-5 py-4 transition-colors hover:bg-[var(--surface-2)]",
                 isMe && "bg-[var(--primary-dim)]",
@@ -218,7 +223,7 @@ export default async function RankingPage({
                 </span>
                 <span className="text-xs text-[var(--muted)]">★</span>
               </div>
-            </div>
+            </Link>
           )
         })}
 

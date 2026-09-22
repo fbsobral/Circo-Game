@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
+import Link from "next/link"
 import { Avatar } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 
@@ -470,9 +471,11 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-4 pb-3">
-        <Avatar name={post.author.name} image={post.author.image} size="sm" />
+        <Link href={`/perfil/${post.author.id}`} className="flex-shrink-0">
+          <Avatar name={post.author.name} image={post.author.image} size="sm" />
+        </Link>
         <div className="flex-1 min-w-0">
-          <span className="user-name text-sm font-semibold">{post.author.name}</span>
+          <Link href={`/perfil/${post.author.id}`} className="user-name text-sm font-semibold hover:underline">{post.author.name}</Link>
           <span className="text-xs text-[var(--muted)] ml-2">{timeAgo(post.createdAt)}</span>
         </div>
         {isAuthor && !editing && (
@@ -617,10 +620,12 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
         <div className="border-t border-[var(--border)] px-4 py-3 space-y-3" style={{ background: "var(--surface-2)" }}>
           {comments.map((c) => (
             <div key={c.id} className="flex gap-2.5">
-              <Avatar name={c.author.name} image={c.author.image} size="sm" />
+              <Link href={`/perfil/${c.author.id}`} className="flex-shrink-0">
+                <Avatar name={c.author.name} image={c.author.image} size="sm" />
+              </Link>
               <div className="flex-1 min-w-0">
                 <div className="rounded-xl px-3 py-2" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <span className="user-name text-xs font-semibold mr-2">{c.author.name}</span>
+                  <Link href={`/perfil/${c.author.id}`} className="user-name text-xs font-semibold mr-2 hover:underline">{c.author.name}</Link>
                   <span className="text-sm leading-relaxed">{highlightMentions(c.content)}</span>
                 </div>
                 <div className="flex items-center gap-3 pl-3 mt-1">
