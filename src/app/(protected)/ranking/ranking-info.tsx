@@ -93,9 +93,9 @@ export function RankingInfo() {
                 <span className="text-center" style={{ color: "var(--primary)" }}>Pontuação</span>
               </div>
               {[
-                { name: "Ana", expected: 20, stars: 90, score: "4,5" },
-                { name: "João", expected: 10, stars: 45, score: "4,5" },
-                { name: "Bia (3 faltas)", expected: 20, stars: 40, score: "2,0" },
+                { name: "Ana", expected: 20, stars: 50, score: "2,5" },
+                { name: "João", expected: 10, stars: 25, score: "2,5" },
+                { name: "Bia (3 faltas)", expected: 20, stars: 20, score: "1,0" },
               ].map((row) => (
                 <div key={row.name} className="grid grid-cols-4 px-3 py-2 border-t" style={{ borderColor: "var(--border)" }}>
                   <span style={{ color: "var(--text)" }}>{row.name}</span>

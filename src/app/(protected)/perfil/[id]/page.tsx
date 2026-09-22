@@ -168,7 +168,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             <span style={{ color: "var(--star-active)" }}>{myScore.toFixed(2)} ★</span>
           </div>
           <div className="text-xs pt-0.5" style={{ color: "var(--muted)" }}>
-            Máx. possível: 5,00 · quanto maior, mais consistente
+            Máx. possível: 3,00 · quanto maior, mais consistente
           </div>
         </div>
       )}
