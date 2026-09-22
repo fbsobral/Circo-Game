@@ -6,17 +6,19 @@ import { Avatar } from "@/components/ui/avatar"
 import { StarsDisplay } from "@/components/stars"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { DeleteClassButton } from "./delete-class-button"
 
 export default async function AulaDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   const { id } = await params
   const role = (session!.user as { role: string }).role
+  const userId = session!.user.id
   const isProfessorOrAdmin = role === "professor" || role === "admin"
 
   const cls = await db.class.findUnique({
     where: { id },
     include: {
-      createdBy: { select: { name: true } },
+      createdBy: { select: { id: true, name: true } },
       starRecords: {
         include: { student: { select: { id: true, name: true, image: true } } },
         orderBy: { stars: "desc" },
@@ -41,9 +43,15 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
           {cls.notes && <p className="text-sm text-[var(--muted)] mt-2 italic">{cls.notes}</p>}
         </div>
         {isProfessorOrAdmin && (
-          <Link href={`/aulas/${id}/estrelas`}>
-            <Button size="sm">Editar estrelas</Button>
-          </Link>
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <Link href={`/aulas/${id}/estrelas`}>
+              <Button size="sm">Editar estrelas</Button>
+            </Link>
+            <DeleteClassButton
+              classId={id}
+              isCreator={role === "admin" || cls.createdById === userId}
+            />
+          </div>
         )}
       </div>
 
