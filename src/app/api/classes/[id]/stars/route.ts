@@ -13,29 +13,30 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id: classId } = await params
   const { records } = await req.json() as {
-    records: { studentId: string; stars: number; note?: string }[]
+    records: { studentId: string; stars: number; note?: string; absent?: boolean }[]
   }
 
   const cls = await db.class.findUnique({ where: { id: classId } })
   if (!cls) return NextResponse.json({ error: "Aula não encontrada" }, { status: 404 })
 
   const results = await Promise.all(
-    records.map(({ studentId, stars, note }) =>
+    records.map(({ studentId, stars, note, absent }) =>
       db.starRecord.upsert({
         where: { classId_studentId: { classId, studentId } },
-        create: { classId, studentId, stars, note: note || null, recordedById: session.user.id },
-        update: { stars, note: note || null, recordedById: session.user.id },
+        create: { classId, studentId, stars: absent ? 0 : stars, absent: absent ?? false, note: absent ? null : note || null, recordedById: session.user.id },
+        update: { stars: absent ? 0 : stars, absent: absent ?? false, note: absent ? null : note || null, recordedById: session.user.id },
         include: { student: true },
       })
     )
   )
 
-  // Send email notifications in background (don't await to avoid slow response)
+  // Send email only for present students with stars
   Promise.all(
     results.map(async (record) => {
+      if (record.absent || record.stars === 0) return
       if (!record.student.email) return
       const total = await db.starRecord.aggregate({
-        where: { studentId: record.studentId },
+        where: { studentId: record.studentId, absent: false },
         _sum: { stars: true },
       })
       try {

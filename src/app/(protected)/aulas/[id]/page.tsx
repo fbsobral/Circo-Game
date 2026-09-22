@@ -21,16 +21,18 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
       createdBy: { select: { id: true, name: true } },
       starRecords: {
         include: { student: { select: { id: true, name: true, image: true } } },
-        orderBy: { stars: "desc" },
+        orderBy: [{ absent: "asc" }, { stars: "desc" }],
       },
     },
   })
 
   if (!cls) notFound()
 
-  const avg = cls.starRecords.length
-    ? (cls.starRecords.reduce((s: number, r: { stars: number }) => s + r.stars, 0) / cls.starRecords.length).toFixed(1)
+  const presentRecords = cls.starRecords.filter((r: { absent: boolean }) => !r.absent)
+  const avg = presentRecords.length
+    ? (presentRecords.reduce((s: number, r: { stars: number }) => s + r.stars, 0) / presentRecords.length).toFixed(1)
     : null
+  const absentCount = cls.starRecords.filter((r: { absent: boolean }) => r.absent).length
 
   return (
     <div className="space-y-6">
@@ -45,7 +47,7 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
         {isProfessorOrAdmin && (
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <Link href={`/aulas/${id}/estrelas`}>
-              <Button size="sm">Editar estrelas</Button>
+              <Button size="sm">Editar registro</Button>
             </Link>
             <DeleteClassButton
               classId={id}
@@ -56,7 +58,7 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-4">
         <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 text-center">
           <div className="text-2xl font-bold text-[var(--star-active)]" style={{ fontFamily: "var(--font-cormorant)" }}>
             {avg ? `${avg} ★` : "—"}
@@ -65,22 +67,34 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
         </div>
         <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] p-4 text-center">
           <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-cormorant)" }}>
-            {cls.starRecords.length}
+            {presentRecords.length}
           </div>
-          <div className="text-xs text-[var(--muted)] mt-1">Alunos registrados</div>
+          <div className="text-xs text-[var(--muted)] mt-1">Presentes</div>
+        </div>
+        <div className="rounded-xl border p-4 text-center" style={{ background: absentCount > 0 ? "rgba(220,38,38,0.07)" : "var(--surface)", borderColor: absentCount > 0 ? "rgba(220,38,38,0.3)" : "var(--border)" }}>
+          <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-cormorant)", color: absentCount > 0 ? "#f87171" : "var(--muted)" }}>
+            {absentCount}
+          </div>
+          <div className="text-xs text-[var(--muted)] mt-1">Faltas</div>
         </div>
       </div>
 
       {/* Students */}
       <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] divide-y divide-[var(--border)]">
         {cls.starRecords.map((r) => (
-          <div key={r.id} className="flex items-center gap-4 px-5 py-3.5">
-            <Avatar name={r.student.name} image={r.student.image} size="sm" />
+          <div key={r.id} className="flex items-center gap-4 px-5 py-3.5" style={r.absent ? { background: "rgba(220,38,38,0.04)" } : undefined}>
+            <Avatar name={r.student.name} image={r.student.image} size="sm" className={r.absent ? "opacity-40" : undefined} />
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium">{r.student.name}</div>
-              {r.note && <div className="text-xs text-[var(--muted)] italic mt-0.5">"{r.note}"</div>}
+              <div className={`text-sm font-medium${r.absent ? " opacity-40 line-through" : ""}`}>{r.student.name}</div>
+              {!r.absent && r.note && <div className="text-xs text-[var(--muted)] italic mt-0.5">"{r.note}"</div>}
             </div>
-            <StarsDisplay value={r.stars} size="sm" />
+            {r.absent ? (
+              <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: "rgba(220,38,38,0.15)", color: "#f87171", border: "1px solid rgba(220,38,38,0.3)" }}>
+                faltou
+              </span>
+            ) : (
+              <StarsDisplay value={r.stars} size="sm" />
+            )}
           </div>
         ))}
         {cls.starRecords.length === 0 && (
