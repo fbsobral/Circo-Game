@@ -63,7 +63,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
   const freqLabel = user.weeklyFrequency === 2 ? "2× por semana" : "1× por semana"
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
+    <div className="space-y-6">
       {/* Header card */}
       <div
         className="rounded-2xl p-6 relative overflow-hidden"
