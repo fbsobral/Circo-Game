@@ -19,6 +19,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const cls = await db.class.findUnique({ where: { id: classId } })
   if (!cls) return NextResponse.json({ error: "Aula não encontrada" }, { status: 404 })
 
+  // Remove records for students no longer included in this class
+  const includedIds = records.map((r) => r.studentId)
+  await db.starRecord.deleteMany({
+    where: { classId, studentId: { notIn: includedIds } },
+  })
+
   const results = await Promise.all(
     records.map(({ studentId, stars, note, absent }) =>
       db.starRecord.upsert({

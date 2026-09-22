@@ -19,9 +19,9 @@ export default async function EsteralasPage({ params }: { params: Promise<{ id: 
 
   if (!cls) notFound()
 
-  const recordMap: Record<string, { stars: number; note: string; absent: boolean }> = {}
+  const recordMap: Record<string, { stars: number; note: string; absent: boolean; included: boolean }> = {}
   for (const r of existingRecords) {
-    recordMap[r.studentId] = { stars: r.stars, note: r.note ?? "", absent: r.absent }
+    recordMap[r.studentId] = { stars: r.stars, note: r.note ?? "", absent: r.absent, included: true }
   }
 
   return (
