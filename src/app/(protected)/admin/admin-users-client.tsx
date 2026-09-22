@@ -286,14 +286,6 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
                       <option value="professor">Professor</option>
                       {!isProfessor && <option value="admin">Admin</option>}
                     </select>
-                    <select
-                      value={editForm.weeklyFrequency}
-                      onChange={(e) => setEditForm((f) => ({ ...f, weeklyFrequency: Number(e.target.value) }))}
-                      className="w-full rounded-lg bg-[var(--surface)] border border-[var(--border)] px-4 py-2.5 text-sm text-[var(--text)] focus:outline-none focus:border-[var(--primary)] transition-colors"
-                    >
-                      <option value={1}>1x por semana</option>
-                      <option value={2}>2x por semana</option>
-                    </select>
                   </div>
                   {editError && <p className="text-xs text-[var(--danger)]">{editError}</p>}
                   <div className="flex justify-end">

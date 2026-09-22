@@ -16,7 +16,6 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
       name: true,
       image: true,
       role: true,
-      weeklyFrequency: true,
       createdAt: true,
       starRecords: {
         orderBy: { class: { date: "desc" } },
@@ -41,27 +40,23 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
     where: { role: "student" },
     select: {
       id: true,
-      weeklyFrequency: true,
-      createdAt: true,
-      starRecords: { select: { stars: true } },
+      starRecords: { select: { stars: true, absent: true } },
     },
   })
 
   const scores = allStudents.map((u) => {
-    const stars = u.starRecords.reduce((s, r) => s + r.stars, 0)
-    const weeks = Math.max(1, Math.ceil((now.getTime() - u.createdAt.getTime()) / MS_PER_WEEK))
-    return { id: u.id, score: stars / (u.weeklyFrequency * weeks) }
+    const stars = u.starRecords.reduce((s, r) => s + (r.absent ? 0 : r.stars), 0)
+    const expected = u.starRecords.length
+    return { id: u.id, score: expected > 0 ? stars / expected : 0 }
   })
   scores.sort((a, b) => b.score - a.score)
 
   const rankPosition = scores.findIndex((s) => s.id === id) + 1
   const myScore = scores.find((s) => s.id === id)?.score ?? 0
 
-  const weeksEnrolled = Math.max(1, Math.ceil((now.getTime() - user.createdAt.getTime()) / MS_PER_WEEK))
-  const expectedClasses = user.weeklyFrequency * weeksEnrolled
+  const expectedClasses = user.starRecords.length // presentes + faltou
 
   const roleLabel = user.role === "admin" ? "Admin" : user.role === "professor" ? "Professor" : "Aluno"
-  const freqLabel = user.weeklyFrequency === 2 ? "2× por semana" : "1× por semana"
 
   return (
     <div className="space-y-6">
@@ -107,11 +102,6 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
               >
                 {roleLabel}
               </span>
-              {user.role === "student" && (
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "var(--surface-2)", color: "var(--muted)" }}>
-                  {freqLabel}
-                </span>
-              )}
               <span className="text-xs" style={{ color: "var(--muted)" }}>
                 desde {formatDate(user.createdAt)}
               </span>
@@ -162,15 +152,15 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             <span className="font-medium" style={{ color: "var(--star-active)" }}>{totalStars} ★</span>
           </div>
           <div className="flex justify-between gap-2">
-            <span style={{ color: "var(--muted)" }}>Frequência esperada</span>
-            <span className="font-medium">{user.weeklyFrequency}× por semana</span>
+            <span style={{ color: "var(--muted)" }}>Aulas presentes</span>
+            <span className="font-medium">{classCount}</span>
           </div>
           <div className="flex justify-between gap-2">
-            <span style={{ color: "var(--muted)" }}>Semanas no app</span>
-            <span className="font-medium">{weeksEnrolled} sem.</span>
+            <span style={{ color: "var(--muted)" }}>Faltas registradas</span>
+            <span className="font-medium" style={{ color: absentCount > 0 ? "#f87171" : undefined }}>{absentCount}</span>
           </div>
           <div className="flex justify-between gap-2">
-            <span style={{ color: "var(--muted)" }}>Aulas esperadas ({user.weeklyFrequency} × {weeksEnrolled})</span>
+            <span style={{ color: "var(--muted)" }}>Total de aulas esperadas</span>
             <span className="font-medium">{expectedClasses}</span>
           </div>
           <div className="border-t pt-2 mt-2 flex justify-between gap-2 font-semibold" style={{ borderColor: "rgba(201,168,76,0.2)" }}>

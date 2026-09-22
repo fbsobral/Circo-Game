@@ -26,26 +26,17 @@ export default async function RankingPage({
     include: {
       starRecords: {
         where: hasDateFilter ? { class: { date: dateFilter } } : undefined,
-        select: { stars: true },
+        select: { stars: true, absent: true },
       },
     },
   })
 
-  const now = new Date()
-  const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000
-
-  // Semanas cobertas pelo filtro de data (ou desde o cadastro do aluno até hoje)
-  const filterWeeks = hasDateFilter
-    ? Math.max(1, Math.ceil((new Date(to + "T23:59:59").getTime() - new Date(from!).getTime()) / MS_PER_WEEK))
-    : null
-
   const ranked = users
     .map((u) => {
-      const totalStars = u.starRecords.reduce((sum: number, r: { stars: number }) => sum + r.stars, 0)
-      const classCount = u.starRecords.length
-      const weeksEnrolled = filterWeeks ?? Math.max(1, Math.ceil((now.getTime() - u.createdAt.getTime()) / MS_PER_WEEK))
-      const expectedClasses = u.weeklyFrequency * weeksEnrolled
-      const score = totalStars / expectedClasses
+      const totalStars = u.starRecords.reduce((sum: number, r: { stars: number; absent: boolean }) => sum + (r.absent ? 0 : r.stars), 0)
+      const expectedClasses = u.starRecords.length // presentes + faltou
+      const classCount = u.starRecords.filter((r: { absent: boolean }) => !r.absent).length
+      const score = expectedClasses > 0 ? totalStars / expectedClasses : 0
       return { ...u, totalStars, classCount, score, expectedClasses }
     })
     .filter((u) => u.totalStars > 0 || !hasDateFilter)
