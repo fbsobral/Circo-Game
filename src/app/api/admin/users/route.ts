@@ -50,7 +50,7 @@ export async function GET() {
   }
 
   const users = await db.user.findMany({
-    select: { id: true, name: true, email: true, role: true, image: true, createdAt: true },
+    select: { id: true, name: true, email: true, role: true, image: true, createdAt: true, mustChangePassword: true },
     orderBy: { createdAt: "asc" },
   })
   return NextResponse.json(users)
@@ -66,18 +66,39 @@ export async function PATCH(req: NextRequest) {
 
   const body = await req.json()
 
-  // Edit name/email
+  // Edit name/email/role
   if (body.action === "edit") {
-    const { userId, name, email } = body
+    const { userId, name, email, userRole } = body
     if (!name || !email) return NextResponse.json({ error: "Nome e e-mail obrigatórios" }, { status: 400 })
+    if (userRole === "admin" && role !== "admin") {
+      return NextResponse.json({ error: "Somente admins podem definir role admin" }, { status: 403 })
+    }
     const conflict = await db.user.findFirst({ where: { email, NOT: { id: userId } } })
     if (conflict) return NextResponse.json({ error: "E-mail já em uso" }, { status: 409 })
+    const updateData: Record<string, unknown> = { name, email }
+    if (userRole && ["admin", "professor", "student"].includes(userRole)) updateData.role = userRole
     const user = await db.user.update({
       where: { id: userId },
-      data: { name, email },
-      select: { id: true, name: true, email: true, role: true, image: true, createdAt: true },
+      data: updateData,
+      select: { id: true, name: true, email: true, role: true, image: true, createdAt: true, mustChangePassword: true },
     })
     return NextResponse.json(user)
+  }
+
+  // Resend welcome e-mail with new temp password
+  if (body.action === "resendEmail") {
+    if (role !== "admin" && role !== "professor") {
+      return NextResponse.json({ error: "Não autorizado" }, { status: 403 })
+    }
+    const { userId } = body
+    const target = await db.user.findUnique({ where: { id: userId }, select: { name: true, email: true } })
+    if (!target?.email) return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 })
+    const tempPassword = Math.random().toString(36).slice(2, 6).toUpperCase() + Math.random().toString(36).slice(2, 6)
+    const hash = await bcrypt.hash(tempPassword, 12)
+    await db.user.update({ where: { id: userId }, data: { password: hash, mustChangePassword: true } })
+    const loginUrl = `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/login`
+    sendWelcomeEmail(target.email, target.name ?? "", loginUrl, tempPassword).catch(() => {})
+    return NextResponse.json({ ok: true })
   }
 
   const { userId, newRole } = body

@@ -15,6 +15,7 @@ interface User {
   role: Role
   image: string | null
   createdAt: Date
+  mustChangePassword?: boolean
 }
 
 const roleLabels: Record<Role, string> = {
@@ -36,9 +37,10 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
   const [formError, setFormError] = useState("")
   const [formLoading, setFormLoading] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({ name: "", email: "" })
+  const [editForm, setEditForm] = useState({ name: "", email: "", userRole: "student" as Role })
   const [editError, setEditError] = useState("")
   const [editLoading, setEditLoading] = useState(false)
+  const [resendingId, setResendingId] = useState<string | null>(null)
 
   async function createUser(e: React.FormEvent) {
     e.preventDefault()
@@ -62,7 +64,7 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
 
   function startEdit(user: User) {
     setEditingId(user.id)
-    setEditForm({ name: user.name ?? "", email: user.email ?? "" })
+    setEditForm({ name: user.name ?? "", email: user.email ?? "", userRole: user.role })
     setEditError("")
   }
 
@@ -83,6 +85,21 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
     }
     setUsers((prev) => prev.map((u) => (u.id === editingId ? { ...u, ...data } : u)))
     setEditingId(null)
+  }
+
+  async function resendEmail(userId: string) {
+    if (!confirm("Isso vai gerar uma nova senha temporária e reenviar o e-mail. Continuar?")) return
+    setResendingId(userId)
+    const res = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "resendEmail", userId }),
+    })
+    setResendingId(null)
+    if (!res.ok) {
+      const { error } = await res.json()
+      alert(error ?? "Erro ao reenviar e-mail")
+    }
   }
 
   async function changeRole(userId: string, newRole: Role) {
@@ -179,6 +196,11 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
                     }`}>
                       {roleLabels[user.role]}
                     </span>
+                    {user.mustChangePassword && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded font-medium bg-yellow-900/40 text-yellow-400">
+                        senha pendente
+                      </span>
+                    )}
                   </div>
                   <span className="text-xs text-[var(--muted)]">{user.email}</span>
                 </div>
@@ -187,8 +209,18 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
                     size="sm"
                     variant="ghost"
                     onClick={() => isEditing ? setEditingId(null) : startEdit(user)}
+                    title="Editar"
                   >
                     {isEditing ? "✕" : "✎"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    loading={resendingId === user.id}
+                    onClick={() => resendEmail(user.id)}
+                    title="Reenviar e-mail com nova senha"
+                  >
+                    ✉
                   </Button>
                   {!isMe && !isProfessor && (
                     <>
@@ -230,7 +262,7 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
 
               {isEditing && (
                 <form onSubmit={saveEdit} className="px-5 pb-4 space-y-2 bg-[var(--surface-2)]">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
                     <Input
                       placeholder="Nome"
                       value={editForm.name}
@@ -244,6 +276,15 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
                       onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
                       required
                     />
+                    <select
+                      value={editForm.userRole}
+                      onChange={(e) => setEditForm((f) => ({ ...f, userRole: e.target.value as Role }))}
+                      className="w-full rounded-lg bg-[var(--surface)] border border-[var(--border)] px-4 py-2.5 text-sm text-[var(--text)] focus:outline-none focus:border-[var(--primary)] transition-colors"
+                    >
+                      <option value="student">Aluno</option>
+                      <option value="professor">Professor</option>
+                      {!isProfessor && <option value="admin">Admin</option>}
+                    </select>
                   </div>
                   {editError && <p className="text-xs text-[var(--danger)]">{editError}</p>}
                   <div className="flex justify-end">

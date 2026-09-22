@@ -10,7 +10,7 @@ export default async function AdminPage() {
   if (role !== "admin") redirect("/dashboard")
 
   const users = await db.user.findMany({
-    select: { id: true, name: true, email: true, role: true, image: true, createdAt: true },
+    select: { id: true, name: true, email: true, role: true, image: true, createdAt: true, mustChangePassword: true },
     orderBy: { createdAt: "asc" },
   })
 
