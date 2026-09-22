@@ -29,14 +29,25 @@ export default async function RankingPage({
     },
   })
 
+  const now = new Date()
+  const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000
+
+  // Semanas cobertas pelo filtro de data (ou desde o cadastro do aluno até hoje)
+  const filterWeeks = hasDateFilter
+    ? Math.max(1, Math.ceil((new Date(to + "T23:59:59").getTime() - new Date(from!).getTime()) / MS_PER_WEEK))
+    : null
+
   const ranked = users
-    .map((u) => ({
-      ...u,
-      totalStars: u.starRecords.reduce((sum: number, r: { stars: number }) => sum + r.stars, 0),
-      classCount: u.starRecords.length,
-    }))
+    .map((u) => {
+      const totalStars = u.starRecords.reduce((sum: number, r: { stars: number }) => sum + r.stars, 0)
+      const classCount = u.starRecords.length
+      const weeksEnrolled = filterWeeks ?? Math.max(1, Math.ceil((now.getTime() - u.createdAt.getTime()) / MS_PER_WEEK))
+      const expectedClasses = u.weeklyFrequency * weeksEnrolled
+      const score = totalStars / expectedClasses
+      return { ...u, totalStars, classCount, score, expectedClasses }
+    })
     .filter((u) => u.totalStars > 0 || !hasDateFilter)
-    .sort((a, b) => b.totalStars - a.totalStars)
+    .sort((a, b) => b.score - a.score)
 
   const podium = ranked.length >= 3 ? [ranked[1], ranked[0], ranked[2]] : null
 
@@ -58,7 +69,7 @@ export default async function RankingPage({
           >
             Ranking
           </h1>
-          <p className="text-sm text-[var(--muted)] mt-1">{ranked.length} participantes · ordenado por estrelas</p>
+          <p className="text-sm text-[var(--muted)] mt-1">{ranked.length} participantes · pontuação por aula esperada</p>
         </div>
         <Suspense>
           <RankingFilters />
@@ -93,7 +104,7 @@ export default async function RankingPage({
                   <Avatar name={student.name} image={student.image} size="lg" totalStars={student.totalStars} />
                   <div className="w-full">
                     <div className="user-name text-base font-semibold truncate" style={{ fontFamily: "var(--font-inter), sans-serif", textTransform: "none" }}>{student.name}</div>
-                    <div className="font-bold mt-1" style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.8rem", color: "var(--star-active)", textShadow: "0 0 20px rgba(240,192,64,0.5)" }}>{student.totalStars} ★</div>
+                    <div className="font-bold mt-1" style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.8rem", color: "var(--star-active)", textShadow: "0 0 20px rgba(240,192,64,0.5)" }}>{student.score.toFixed(1)} ★</div>
                   </div>
                 </div>
               )
@@ -110,7 +121,7 @@ export default async function RankingPage({
                   <Avatar name={student.name} image={student.image} size="md" totalStars={student.totalStars} />
                   <div className="w-full">
                     <div className="user-name text-xs font-semibold truncate" style={{ fontFamily: "var(--font-inter), sans-serif", textTransform: "none" }}>{student.name}</div>
-                    <div className="font-bold mt-0.5" style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.1rem", color: "var(--primary)" }}>{student.totalStars} ★</div>
+                    <div className="font-bold mt-0.5" style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.1rem", color: "var(--primary)" }}>{student.score.toFixed(1)} ★</div>
                   </div>
                 </div>
               ))}
@@ -140,7 +151,7 @@ export default async function RankingPage({
                   <Avatar name={student.name} image={student.image} size={isWinner ? "lg" : "md"} totalStars={student.totalStars} />
                   <div className="w-full">
                     <div className="user-name text-sm font-semibold truncate" style={{ fontSize: isWinner ? "1.1rem" : undefined, fontFamily: "var(--font-inter), sans-serif", textTransform: "none" }}>{student.name}</div>
-                    <div className="font-bold mt-1" style={{ fontFamily: "var(--font-cormorant)", fontSize: isWinner ? "1.6rem" : "1.2rem", color: isWinner ? "var(--star-active)" : "var(--primary)", textShadow: isWinner ? "0 0 20px rgba(240,192,64,0.5)" : undefined }}>{student.totalStars} ★</div>
+                    <div className="font-bold mt-1" style={{ fontFamily: "var(--font-cormorant)", fontSize: isWinner ? "1.6rem" : "1.2rem", color: isWinner ? "var(--star-active)" : "var(--primary)", textShadow: isWinner ? "0 0 20px rgba(240,192,64,0.5)" : undefined }}>{student.score.toFixed(1)} ★</div>
                   </div>
                 </div>
               )
@@ -190,7 +201,7 @@ export default async function RankingPage({
                   )}
                 </div>
                 <span className="text-xs text-[var(--muted)]">
-                  {student.classCount} aula{student.classCount !== 1 ? "s" : ""}
+                  {student.classCount} aula{student.classCount !== 1 ? "s" : ""} · {student.totalStars} ★ total
                 </span>
               </div>
 
@@ -203,7 +214,7 @@ export default async function RankingPage({
                     color: i === 0 ? "var(--star-active)" : "var(--text)",
                   }}
                 >
-                  {student.totalStars}
+                  {student.score.toFixed(1)}
                 </span>
                 <span className="text-xs text-[var(--muted)]">★</span>
               </div>

@@ -16,6 +16,7 @@ interface User {
   image: string | null
   createdAt: Date
   mustChangePassword?: boolean
+  weeklyFrequency?: number
 }
 
 const roleLabels: Record<Role, string> = {
@@ -37,7 +38,7 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
   const [formError, setFormError] = useState("")
   const [formLoading, setFormLoading] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({ name: "", email: "", userRole: "student" as Role })
+  const [editForm, setEditForm] = useState({ name: "", email: "", userRole: "student" as Role, weeklyFrequency: 1 })
   const [editError, setEditError] = useState("")
   const [editLoading, setEditLoading] = useState(false)
   const [resendingId, setResendingId] = useState<string | null>(null)
@@ -64,7 +65,7 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
 
   function startEdit(user: User) {
     setEditingId(user.id)
-    setEditForm({ name: user.name ?? "", email: user.email ?? "", userRole: user.role })
+    setEditForm({ name: user.name ?? "", email: user.email ?? "", userRole: user.role, weeklyFrequency: user.weeklyFrequency ?? 1 })
     setEditError("")
   }
 
@@ -262,7 +263,7 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
 
               {isEditing && (
                 <form onSubmit={saveEdit} className="px-5 pb-4 space-y-2 bg-[var(--surface-2)]">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
                     <Input
                       placeholder="Nome"
                       value={editForm.name}
@@ -284,6 +285,14 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
                       <option value="student">Aluno</option>
                       <option value="professor">Professor</option>
                       {!isProfessor && <option value="admin">Admin</option>}
+                    </select>
+                    <select
+                      value={editForm.weeklyFrequency}
+                      onChange={(e) => setEditForm((f) => ({ ...f, weeklyFrequency: Number(e.target.value) }))}
+                      className="w-full rounded-lg bg-[var(--surface)] border border-[var(--border)] px-4 py-2.5 text-sm text-[var(--text)] focus:outline-none focus:border-[var(--primary)] transition-colors"
+                    >
+                      <option value={1}>1x por semana</option>
+                      <option value={2}>2x por semana</option>
                     </select>
                   </div>
                   {editError && <p className="text-xs text-[var(--danger)]">{editError}</p>}
