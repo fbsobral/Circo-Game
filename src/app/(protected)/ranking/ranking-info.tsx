@@ -68,34 +68,68 @@ export function RankingInfo() {
               O ranking mede aproveitamento — não quem acumulou mais estrelas no total.
             </p>
 
-            <div className="rounded-xl px-4 py-3 mb-5 text-sm font-mono text-center" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--primary)" }}>
+            <div className="rounded-xl px-4 py-3 mb-4 text-sm font-mono text-center" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--primary)" }}>
               pontuação = ★ ganhas ÷ aulas esperadas
             </div>
 
-            <p className="text-xs mb-4" style={{ color: "var(--muted)" }}>
-              <strong style={{ color: "var(--text)" }}>Aulas esperadas</strong> = todas as aulas em que o professor te marcou (presente, zero estrelas ou falta). Quem falta entra no denominador sem ganhar estrelas — a média cai.
-            </p>
-
-            {/* Three example breakdowns */}
+            {/* Three example breakdowns — same visual as profile breakdown */}
             <div className="space-y-3">
-              {[
-                { name: "Ana (2× por semana)", rows: [["Estrelas ganhas", "50 ★", false], ["Aulas esperadas", "20", false], ["Pontuação (50 ÷ 20)", "2,5 ★", true]] },
-                { name: "João (1× por semana)", rows: [["Estrelas ganhas", "25 ★", false], ["Aulas esperadas", "10", false], ["Pontuação (25 ÷ 10)", "2,5 ★", true]] },
-                { name: "Bia (3 faltas)", rows: [["Estrelas ganhas", "20 ★", false], ["Aulas esperadas", "20", false], ["Pontuação (20 ÷ 20)", "1,0 ★", true]], danger: true },
-              ].map(({ name, rows, danger }) => (
-                <div key={name} className="rounded-xl overflow-hidden text-xs" style={{ border: `1px solid ${danger ? "rgba(220,38,38,0.3)" : "var(--border)"}`, background: danger ? "rgba(220,38,38,0.04)" : undefined }}>
-                  <div className="px-3 py-2 font-semibold" style={{ background: "var(--surface-2)", color: danger ? "#f87171" : "var(--text)" }}>{name}</div>
-                  {rows.map(([label, value, isFinal]) => (
-                    <div key={String(label)} className="flex justify-between px-3 py-1.5 border-t" style={{ borderColor: danger ? "rgba(220,38,38,0.2)" : "var(--border)", fontWeight: isFinal ? 600 : undefined }}>
-                      <span style={{ color: "var(--muted)" }}>{label}</span>
-                      <span style={{ color: isFinal ? (danger ? "#f87171" : "var(--primary)") : "var(--text)" }}>{value}</span>
-                    </div>
-                  ))}
+              {([
+                {
+                  label: "Ana — vai 2× por semana",
+                  stars: 50, present: 20, absent: 0, expected: 20,
+                  score: "2,5", danger: false,
+                },
+                {
+                  label: "João — vai 1× por semana",
+                  stars: 25, present: 10, absent: 0, expected: 10,
+                  score: "2,5", danger: false,
+                },
+                {
+                  label: "Bia — vai 2×, mas faltou 3×",
+                  stars: 20, present: 17, absent: 3, expected: 20,
+                  score: "1,0", danger: true,
+                },
+              ] as const).map(({ label, stars, present, absent, expected, score, danger }) => (
+                <div
+                  key={label}
+                  className="rounded-2xl px-4 py-3 text-sm space-y-1"
+                  style={{
+                    background: danger ? "rgba(220,38,38,0.06)" : "rgba(201,168,76,0.06)",
+                    border: `1px solid ${danger ? "rgba(220,38,38,0.25)" : "rgba(201,168,76,0.18)"}`,
+                  }}
+                >
+                  <div className="text-xs font-semibold mb-2" style={{ color: danger ? "#f87171" : "var(--primary)" }}>
+                    {label}
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span style={{ color: "var(--muted)" }}>Estrelas ganhas</span>
+                    <span className="font-medium" style={{ color: "var(--star-active)" }}>{stars} ★</span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span style={{ color: "var(--muted)" }}>Aulas presentes</span>
+                    <span className="font-medium">{present}</span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span style={{ color: "var(--muted)" }}>Faltas registradas</span>
+                    <span className="font-medium" style={{ color: absent > 0 ? "#f87171" : undefined }}>{absent}</span>
+                  </div>
+                  <div className="flex justify-between gap-2">
+                    <span style={{ color: "var(--muted)" }}>Total de aulas esperadas</span>
+                    <span className="font-medium">{expected}</span>
+                  </div>
+                  <div
+                    className="flex justify-between gap-2 pt-2 mt-1 font-semibold border-t"
+                    style={{ borderColor: danger ? "rgba(220,38,38,0.2)" : "rgba(201,168,76,0.2)" }}
+                  >
+                    <span>Pontuação ({stars} ÷ {expected})</span>
+                    <span style={{ color: danger ? "#f87171" : "var(--primary)" }}>{score} ★</span>
+                  </div>
                 </div>
               ))}
             </div>
             <p className="text-[11px] mt-3 text-center" style={{ color: "var(--muted)" }}>
-              Ana e João empatam em 2,5 mesmo com frequências diferentes · máx. possível: 3,0
+              Ana e João empatam em 2,5 — frequências diferentes, mesmo aproveitamento · máx. 3,0
             </p>
           </div>
         </div>
