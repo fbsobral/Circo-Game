@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { sendStarsNotificationEmail } from "@/lib/email"
 import { formatDateShort } from "@/lib/utils"
+import { createNotification } from "@/lib/notifications"
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -46,14 +47,24 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         _sum: { stars: true },
       })
       try {
+        const stars = record.stars
+        const classTitle = cls.title || "Aula"
+        const dateStr = formatDateShort(cls.date)
+        const totalStars = total._sum.stars ?? 0
+        await createNotification({
+          userId: record.studentId,
+          type: "stars",
+          title: `Você ganhou ${stars}${"★".repeat(stars)} em ${classTitle}`,
+          body: `${dateStr} · Total acumulado: ${totalStars}★${record.note ? ` · "${record.note}"` : ""}`,
+        })
         await sendStarsNotificationEmail(
           record.student.email,
           record.student.name ?? "Aluno",
-          cls.title ?? "",
-          formatDateShort(cls.date),
-          record.stars,
+          classTitle,
+          dateStr,
+          stars,
           record.note,
-          total._sum.stars ?? 0,
+          totalStars,
         )
       } catch {
         // log but don't fail

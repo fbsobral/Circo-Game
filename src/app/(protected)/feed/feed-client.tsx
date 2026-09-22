@@ -90,11 +90,15 @@ interface MentionUser { id: string; name: string | null; image: string | null }
 
 function highlightMentions(text: string) {
   const parts = text.split(/(@\S+(?:\s+\S+)*)/g)
-  return parts.map((part, i) =>
-    part.startsWith("@")
-      ? <span key={i} style={{ color: "var(--primary)", fontWeight: 600 }}>{part}</span>
-      : part
-  )
+  return parts.map((part, i) => {
+    if (!part.startsWith("@")) return part
+    const isBroadcast = part.toLowerCase() === "@todos"
+    return (
+      <span key={i} style={{ color: isBroadcast ? "#a78bfa" : "var(--primary)", fontWeight: 600 }}>
+        {part}
+      </span>
+    )
+  })
 }
 
 function useMentionUsers() {
@@ -112,10 +116,11 @@ function useMentionUsers() {
 function MentionDropdown({
   users, query, onSelect,
 }: { users: MentionUser[]; query: string; onSelect: (name: string) => void }) {
+  const showTodos = "todos".includes(query.toLowerCase())
   const filtered = users.filter((u) => u.name?.toLowerCase().includes(query.toLowerCase())).slice(0, 6)
   const ref = useRef<HTMLDivElement>(null)
   const flipUp = useFlipUp(ref)
-  if (!filtered.length) return null
+  if (!showTodos && !filtered.length) return null
   return (
     <div
       ref={ref}
@@ -128,6 +133,20 @@ function MentionDropdown({
         minWidth: 200,
       }}
     >
+      {showTodos && (
+        <button
+          type="button"
+          onMouseDown={(e) => { e.preventDefault(); onSelect("todos") }}
+          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left hover:bg-[var(--surface-2)] transition-colors border-b"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <span className="w-7 h-7 rounded-full flex items-center justify-center text-sm flex-shrink-0" style={{ background: "rgba(140,100,220,0.15)", color: "#a78bfa" }}>📢</span>
+          <div>
+            <div className="font-semibold" style={{ color: "#a78bfa" }}>@todos</div>
+            <div className="text-[11px]" style={{ color: "var(--muted)" }}>Notifica todos os membros</div>
+          </div>
+        </button>
+      )}
       {filtered.map((u) => (
         <button
           key={u.id}

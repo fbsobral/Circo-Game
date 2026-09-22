@@ -29,6 +29,7 @@ model User {
   sessions      Session[]
   starRecords   StarRecord[] @relation("StudentRecords")
   recordedStars StarRecord[] @relation("RecorderRecords")
+  notifications Notification[]
   classes       Class[]
   passwordResets PasswordReset[]
   posts            Post[]
@@ -94,6 +95,19 @@ model Class {
 
   createdBy   User         @relation(fields: [createdById], references: [id])
   starRecords StarRecord[]
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  type      String   // "mention" | "stars" | "broadcast"
+  title     String
+  body      String
+  url       String?
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model StarRecord {

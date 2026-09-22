@@ -4,6 +4,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import { cn } from "@/lib/utils"
+import { NotificationBell } from "@/components/notification-bell"
 
 interface NavbarProps {
   role: string
@@ -69,6 +70,15 @@ function IconPlus() {
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
       <line x1="12" y1="5" x2="12" y2="19"/>
       <line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  )
+}
+
+function IconBell() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+      <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
     </svg>
   )
 }
@@ -157,6 +167,7 @@ export function Navbar({ role, name }: NavbarProps) {
                 + Registrar aula
               </Link>
             )}
+            <NotificationBell />
             <Link
               href="/conta"
               className="inline-flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-150 hover:bg-[var(--surface-2)]"
@@ -217,6 +228,14 @@ export function Navbar({ role, name }: NavbarProps) {
             )}
           </Link>
         ))}
+        <Link
+          href="/notificacoes"
+          className="flex-1 flex flex-col items-center gap-1 py-3 transition-all duration-150 active:scale-95 relative"
+          style={{ color: isActive("/notificacoes") ? "var(--primary)" : "var(--muted)" }}
+        >
+          <IconBell />
+          <span className="text-[10px] font-medium tracking-wide">Avisos</span>
+        </Link>
         <Link
           href="/conta"
           className="flex-1 flex flex-col items-center gap-1 py-3 transition-all duration-150 active:scale-95"
