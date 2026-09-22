@@ -4,6 +4,7 @@ import { Avatar } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { Suspense } from "react"
 import { RankingFilters } from "./ranking-filters"
+import { RankingInfo } from "./ranking-info"
 import Link from "next/link"
 
 export default async function RankingPage({
@@ -70,7 +71,10 @@ export default async function RankingPage({
           >
             Ranking
           </h1>
-          <p className="text-sm text-[var(--muted)] mt-1">{ranked.length} participantes · pontuação por aula esperada</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-sm text-[var(--muted)]">{ranked.length} participantes · pontuação por aula esperada</p>
+            <RankingInfo />
+          </div>
         </div>
         <Suspense>
           <RankingFilters />
