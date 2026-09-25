@@ -100,7 +100,11 @@ export function NovaAulaForm({ users }: { users: User[] }) {
               />
               <button
                 type="button"
-                onClick={() => setDiamonds((d) => ({ ...d, [u.id]: !d[u.id] }))}
+                onClick={() => {
+                const next = !diamonds[u.id]
+                setDiamonds((d) => ({ ...d, [u.id]: next }))
+                if (next) setStars((s) => ({ ...s, [u.id]: 3 }))
+              }}
                 title={diamonds[u.id] ? "Remover diamante" : "Conceder diamante (+1 ponto bônus)"}
                 className="text-base px-1 transition-all"
                 style={diamonds[u.id] ? { filter: "drop-shadow(0 0 6px #67e8f9)" } : { opacity: 0.25 }}

@@ -200,7 +200,10 @@ export function StarsForm({ classId, students, initialRecords, initialTitle, ini
                       <StarsPicker value={stars} onChange={(v) => updateRecord(student.id, { stars: v, absent: false })} />
                       <button
                         type="button"
-                        onClick={() => updateRecord(student.id, { diamond: !diamond })}
+                        onClick={() => {
+                          const next = !diamond
+                          updateRecord(student.id, { diamond: next, ...(next ? { stars: 3 } : {}) })
+                        }}
                         title={diamond ? "Remover diamante" : "Conceder diamante (+1 ponto bônus)"}
                         className={cn(
                           "text-base px-1.5 py-0.5 rounded-md transition-all",
