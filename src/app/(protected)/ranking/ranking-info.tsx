@@ -69,67 +69,49 @@ export function RankingInfo() {
             </p>
 
             <div className="rounded-xl px-4 py-3 mb-4 text-sm font-mono text-center" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--primary)" }}>
-              pontuação = ★ ganhas ÷ aulas esperadas
+              pontuação = (★ + 💎) ÷ aulas esperadas
             </div>
 
-            {/* Three example breakdowns — same visual as profile breakdown */}
             <div className="space-y-3">
-              {([
-                {
-                  label: "Ana — vai 2× por semana",
-                  stars: 50, present: 20, absent: 0, expected: 20,
-                  score: "2,5", danger: false,
-                },
-                {
-                  label: "João — vai 1× por semana",
-                  stars: 25, present: 10, absent: 0, expected: 10,
-                  score: "2,5", danger: false,
-                },
-                {
-                  label: "Bia — vai 2×, mas faltou 3×",
-                  stars: 20, present: 17, absent: 3, expected: 20,
-                  score: "1,0", danger: true,
-                },
-              ] as const).map(({ label, stars, present, absent, expected, score, danger }) => (
-                <div
-                  key={label}
-                  className="rounded-2xl px-4 py-3 text-sm space-y-1"
-                  style={{
-                    background: danger ? "rgba(220,38,38,0.06)" : "rgba(201,168,76,0.06)",
-                    border: `1px solid ${danger ? "rgba(220,38,38,0.25)" : "rgba(201,168,76,0.18)"}`,
-                  }}
-                >
-                  <div className="text-xs font-semibold mb-2" style={{ color: danger ? "#f87171" : "var(--primary)" }}>
-                    {label}
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <span style={{ color: "var(--muted)" }}>Estrelas ganhas</span>
-                    <span className="font-medium" style={{ color: "var(--star-active)" }}>{stars} ★</span>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <span style={{ color: "var(--muted)" }}>Aulas presentes</span>
-                    <span className="font-medium">{present}</span>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <span style={{ color: "var(--muted)" }}>Faltas registradas</span>
-                    <span className="font-medium" style={{ color: absent > 0 ? "#f87171" : undefined }}>{absent}</span>
-                  </div>
-                  <div className="flex justify-between gap-2">
-                    <span style={{ color: "var(--muted)" }}>Total de aulas esperadas</span>
-                    <span className="font-medium">{expected}</span>
-                  </div>
-                  <div
-                    className="flex justify-between gap-2 pt-2 mt-1 font-semibold border-t"
-                    style={{ borderColor: danger ? "rgba(220,38,38,0.2)" : "rgba(201,168,76,0.2)" }}
-                  >
-                    <span>Pontuação ({stars} ÷ {expected})</span>
-                    <span style={{ color: danger ? "#f87171" : "var(--primary)" }}>{score} ★</span>
-                  </div>
+              {/* Ana */}
+              <div className="rounded-2xl px-4 py-3 text-sm space-y-1" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.18)" }}>
+                <div className="text-xs font-semibold mb-2" style={{ color: "var(--primary)" }}>Ana — vai 2× por semana</div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Estrelas ganhas</span><span className="font-medium" style={{ color: "var(--star-active)" }}>50 ★</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Aulas presentes</span><span className="font-medium">20</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Faltas registradas</span><span className="font-medium">0</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Total de aulas esperadas</span><span className="font-medium">20</span></div>
+                <div className="flex justify-between gap-2 pt-2 mt-1 font-semibold border-t" style={{ borderColor: "rgba(201,168,76,0.2)" }}>
+                  <span>Pontuação (50 ÷ 20)</span><span style={{ color: "var(--primary)" }}>2,5 ★</span>
                 </div>
-              ))}
+              </div>
+
+              {/* Bia */}
+              <div className="rounded-2xl px-4 py-3 text-sm space-y-1" style={{ background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.25)" }}>
+                <div className="text-xs font-semibold mb-2" style={{ color: "#f87171" }}>Bia — vai 2×, mas faltou 3×</div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Estrelas ganhas</span><span className="font-medium" style={{ color: "var(--star-active)" }}>20 ★</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Aulas presentes</span><span className="font-medium">17</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Faltas registradas</span><span className="font-medium" style={{ color: "#f87171" }}>3</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Total de aulas esperadas</span><span className="font-medium">20</span></div>
+                <div className="flex justify-between gap-2 pt-2 mt-1 font-semibold border-t" style={{ borderColor: "rgba(220,38,38,0.2)" }}>
+                  <span>Pontuação (20 ÷ 20)</span><span style={{ color: "#f87171" }}>1,0 ★</span>
+                </div>
+              </div>
+
+              {/* Carlos com diamante */}
+              <div className="rounded-2xl px-4 py-3 text-sm space-y-1" style={{ background: "rgba(103,232,249,0.05)", border: "1px solid rgba(103,232,249,0.2)" }}>
+                <div className="text-xs font-semibold mb-2" style={{ color: "#67e8f9" }}>Carlos — ganhou um 💎 de bônus</div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Estrelas ganhas</span><span className="font-medium" style={{ color: "var(--star-active)" }}>30 ★</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Diamantes (bônus +1 cada)</span><span className="font-medium">💎 × 1</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Total de pontos</span><span className="font-medium">31</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Aulas presentes</span><span className="font-medium">10</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Total de aulas esperadas</span><span className="font-medium">10</span></div>
+                <div className="flex justify-between gap-2 pt-2 mt-1 font-semibold border-t" style={{ borderColor: "rgba(103,232,249,0.2)" }}>
+                  <span>Pontuação (31 ÷ 10)</span><span style={{ color: "#67e8f9" }}>3,1 ★</span>
+                </div>
+              </div>
             </div>
             <p className="text-[11px] mt-3 text-center" style={{ color: "var(--muted)" }}>
-              Ana e João empatam em 2,5 — frequências diferentes, mesmo aproveitamento · máx. 3,0
+              Referência: 3,0 · 💎 é bônus concedido pelo professor — pode ultrapassar 3,0
             </p>
           </div>
         </div>

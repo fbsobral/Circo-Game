@@ -203,7 +203,7 @@ export default async function RankingPage({
                   )}
                 </div>
                 <span className="text-xs text-[var(--muted)]">
-                  {student.classCount} aula{student.classCount !== 1 ? "s" : ""} · {student.totalStars} ★ total
+                  {student.classCount} aula{student.classCount !== 1 ? "s" : ""} · {student.totalStars} ★ total{student.totalDiamonds > 0 && ` · ${student.totalDiamonds} 💎`}
                 </span>
               </div>
 
