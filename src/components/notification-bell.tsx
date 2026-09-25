@@ -117,7 +117,7 @@ export function NotificationBell() {
             </Link>
           </div>
 
-          <div className="divide-y" style={{ borderColor: "var(--border)", maxHeight: 360, overflowY: "auto" }}>
+          <div className="divide-y divide-[var(--border)]" style={{ maxHeight: 360, overflowY: "auto" }}>
             {notifications.length === 0 && (
               <div className="py-10 text-center text-sm" style={{ color: "var(--muted)" }}>
                 Sem notificações
