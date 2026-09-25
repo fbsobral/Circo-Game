@@ -10,7 +10,7 @@ export default async function AulasPage() {
   const isProfessorOrAdmin = role === "professor" || role === "admin"
 
   const classes = await db.class.findMany({
-    orderBy: { date: "desc" },
+    orderBy: [{ date: "desc" }, { createdAt: "desc" }],
     include: {
       _count: { select: { starRecords: true } },
       starRecords: { select: { stars: true } },
