@@ -1,0 +1,1 @@
+ALTER TABLE "StarRecord" ADD COLUMN "diamond" BOOLEAN NOT NULL DEFAULT false;

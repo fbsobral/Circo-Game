@@ -116,6 +116,7 @@ model StarRecord {
   studentId    String
   stars        Int
   absent       Boolean  @default(false)
+  diamond      Boolean  @default(false)
   note         String?
   recordedById String
   createdAt    DateTime @default(now())

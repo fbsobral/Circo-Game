@@ -14,7 +14,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id: classId } = await params
   const { records } = await req.json() as {
-    records: { studentId: string; stars: number; note?: string; absent?: boolean }[]
+    records: { studentId: string; stars: number; note?: string; absent?: boolean; diamond?: boolean }[]
   }
 
   const cls = await db.class.findUnique({ where: { id: classId } })
@@ -27,11 +27,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   })
 
   const results = await Promise.all(
-    records.map(({ studentId, stars, note, absent }) =>
+    records.map(({ studentId, stars, note, absent, diamond }) =>
       db.starRecord.upsert({
         where: { classId_studentId: { classId, studentId } },
-        create: { classId, studentId, stars: absent ? 0 : stars, absent: absent ?? false, note: absent ? null : note || null, recordedById: session.user.id },
-        update: { stars: absent ? 0 : stars, absent: absent ?? false, note: absent ? null : note || null, recordedById: session.user.id },
+        create: { classId, studentId, stars: absent ? 0 : stars, absent: absent ?? false, diamond: absent ? false : (diamond ?? false), note: absent ? null : note || null, recordedById: session.user.id },
+        update: { stars: absent ? 0 : stars, absent: absent ?? false, diamond: absent ? false : (diamond ?? false), note: absent ? null : note || null, recordedById: session.user.id },
         include: { student: true },
       })
     )

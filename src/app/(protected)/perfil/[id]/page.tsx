@@ -19,7 +19,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
       createdAt: true,
       starRecords: {
         orderBy: { class: { date: "desc" } },
-        select: { id: true, stars: true, note: true, absent: true, class: { select: { id: true, title: true, date: true } } },
+        select: { id: true, stars: true, note: true, absent: true, diamond: true, class: { select: { id: true, title: true, date: true } } },
       },
     },
   })
@@ -29,6 +29,8 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
   const isMe = user.id === session!.user.id
 
   const totalStars = user.starRecords.reduce((s, r) => s + (r.absent ? 0 : r.stars), 0)
+  const totalDiamonds = user.starRecords.filter((r) => !r.absent && r.diamond).length
+  const totalPoints = totalStars + totalDiamonds
   const classCount = user.starRecords.filter((r) => !r.absent).length
   const absentCount = user.starRecords.filter((r) => r.absent).length
 
@@ -40,14 +42,15 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
     where: { role: "student" },
     select: {
       id: true,
-      starRecords: { select: { stars: true, absent: true } },
+      starRecords: { select: { stars: true, absent: true, diamond: true } },
     },
   })
 
   const scores = allStudents.map((u) => {
     const stars = u.starRecords.reduce((s, r) => s + (r.absent ? 0 : r.stars), 0)
+    const diamonds = u.starRecords.filter((r) => !r.absent && r.diamond).length
     const expected = u.starRecords.length
-    return { id: u.id, score: expected > 0 ? stars / expected : 0 }
+    return { id: u.id, score: expected > 0 ? (stars + diamonds) / expected : 0 }
   })
   scores.sort((a, b) => b.score - a.score)
 
@@ -151,6 +154,16 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             <span style={{ color: "var(--muted)" }}>Estrelas ganhas</span>
             <span className="font-medium" style={{ color: "var(--star-active)" }}>{totalStars} ★</span>
           </div>
+          {totalDiamonds > 0 && (
+            <div className="flex justify-between gap-2">
+              <span style={{ color: "var(--muted)" }}>Diamantes (bônus +1 cada)</span>
+              <span className="font-medium">💎 × {totalDiamonds}</span>
+            </div>
+          )}
+          <div className="flex justify-between gap-2">
+            <span style={{ color: "var(--muted)" }}>Total de pontos</span>
+            <span className="font-medium">{totalPoints}</span>
+          </div>
           <div className="flex justify-between gap-2">
             <span style={{ color: "var(--muted)" }}>Aulas presentes</span>
             <span className="font-medium">{classCount}</span>
@@ -164,11 +177,11 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             <span className="font-medium">{expectedClasses}</span>
           </div>
           <div className="border-t pt-2 mt-2 flex justify-between gap-2 font-semibold" style={{ borderColor: "rgba(201,168,76,0.2)" }}>
-            <span>Pontuação ({totalStars} ÷ {expectedClasses})</span>
+            <span>Pontuação ({totalPoints} ÷ {expectedClasses})</span>
             <span style={{ color: "var(--star-active)" }}>{myScore.toFixed(2)} ★</span>
           </div>
           <div className="text-xs pt-0.5" style={{ color: "var(--muted)" }}>
-            Máx. possível: 3,00 · quanto maior, mais consistente
+            Referência: 3,00 · diamante é bônus acima do máximo
           </div>
         </div>
       )}
@@ -201,7 +214,10 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
                     faltou
                   </span>
                 ) : (
-                  <StarsDisplay value={r.stars} size="sm" />
+                  <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <StarsDisplay value={r.stars} size="sm" />
+                    {r.diamond && <span className="text-base" title="Diamante (+1 ponto bônus)" style={{ filter: "drop-shadow(0 0 4px #67e8f9)" }}>💎</span>}
+                  </div>
                 )}
               </div>
             ))}

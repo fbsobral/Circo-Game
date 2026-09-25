@@ -13,7 +13,7 @@ interface Student {
   image: string | null
 }
 
-interface StudentRecord { stars: number; note: string; absent: boolean; included: boolean }
+interface StudentRecord { stars: number; note: string; absent: boolean; included: boolean; diamond: boolean }
 
 interface Props {
   classId: string
@@ -35,7 +35,7 @@ export function StarsForm({ classId, students, initialRecords, initialTitle, ini
   const [saved, setSaved] = useState(false)
 
   function getRecord(studentId: string): StudentRecord {
-    return records[studentId] ?? { stars: 0, note: "", absent: false, included: false }
+    return records[studentId] ?? { stars: 0, note: "", absent: false, included: false, diamond: false }
   }
 
   function updateRecord(studentId: string, patch: Partial<StudentRecord>) {
@@ -45,8 +45,7 @@ export function StarsForm({ classId, students, initialRecords, initialTitle, ini
   function toggleIncluded(studentId: string) {
     const rec = getRecord(studentId)
     if (rec.included) {
-      // removing from class: clear everything
-      updateRecord(studentId, { included: false, stars: 0, note: "", absent: false })
+      updateRecord(studentId, { included: false, stars: 0, note: "", absent: false, diamond: false })
       setExpandedNote((n) => (n === studentId ? null : n))
     } else {
       updateRecord(studentId, { included: true, absent: false })
@@ -60,6 +59,7 @@ export function StarsForm({ classId, students, initialRecords, initialTitle, ini
       absent: !wasAbsent,
       stars: wasAbsent ? rec.stars : 0,
       note: wasAbsent ? rec.note : "",
+      diamond: wasAbsent ? rec.diamond : false,
     })
     if (!wasAbsent) setExpandedNote((n) => (n === studentId ? null : n))
   }
@@ -71,12 +71,13 @@ export function StarsForm({ classId, students, initialRecords, initialTitle, ini
     const recordsToSave = students
       .filter((s) => getRecord(s.id).included)
       .map((s) => {
-        const { stars, note, absent } = getRecord(s.id)
+        const { stars, note, absent, diamond } = getRecord(s.id)
         return {
           studentId: s.id,
           stars: absent ? 0 : stars,
           note: absent || !note ? undefined : note,
           absent,
+          diamond: absent ? false : diamond,
         }
       })
 
@@ -104,37 +105,40 @@ export function StarsForm({ classId, students, initialRecords, initialTitle, ini
   const includedCount = students.filter((s) => getRecord(s.id).included).length
   const absentCount = students.filter((s) => { const r = getRecord(s.id); return r.included && r.absent }).length
   const withStars = students.filter((s) => { const r = getRecord(s.id); return r.included && !r.absent && r.stars > 0 }).length
+  const withDiamond = students.filter((s) => { const r = getRecord(s.id); return r.included && !r.absent && r.diamond }).length
 
   return (
     <div className="space-y-6">
       {/* Class fields */}
       <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] divide-y divide-[var(--border)]">
-        <div className="px-5 py-4 flex items-center gap-4">
-          <label className="text-xs text-[var(--muted)] w-16 flex-shrink-0">Título</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Nome da aula (opcional)"
-            className="flex-1 bg-transparent text-sm text-[var(--text)] placeholder:text-[var(--muted)] focus:outline-none"
-          />
-        </div>
-        <div className="px-5 py-4 flex items-center gap-4">
-          <label className="text-xs text-[var(--muted)] w-16 flex-shrink-0">Data</label>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="flex-1 bg-transparent text-sm text-[var(--text)] focus:outline-none"
-            style={{ colorScheme: "dark" }}
-          />
+        <div className="px-5 py-4 grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-[var(--muted)]">Título</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Nome da aula (opcional)"
+              className="bg-transparent text-sm text-[var(--text)] placeholder:text-[var(--muted)] focus:outline-none"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-[var(--muted)]">Data</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="bg-transparent text-sm text-[var(--text)] focus:outline-none"
+              style={{ colorScheme: "dark" }}
+            />
+          </div>
         </div>
         <div className="px-5 py-4 flex items-start gap-4">
-          <label className="text-xs text-[var(--muted)] w-16 flex-shrink-0 pt-0.5">Observação</label>
+          <label className="text-xs text-[var(--muted)] w-20 flex-shrink-0 pt-0.5">Observação</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Observação sobre a aula (visível na página da aula)..."
+            placeholder="Observação sobre a aula..."
             rows={2}
             className="flex-1 bg-transparent text-sm text-[var(--text)] placeholder:text-[var(--muted)] focus:outline-none resize-none"
           />
@@ -147,7 +151,7 @@ export function StarsForm({ classId, students, initialRecords, initialTitle, ini
         <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] divide-y divide-[var(--border)]">
           {students.map((student) => {
             const rec = getRecord(student.id)
-            const { stars, note, absent, included } = rec
+            const { stars, note, absent, included, diamond } = rec
             const isExpanded = expandedNote === student.id
 
             return (
@@ -194,6 +198,20 @@ export function StarsForm({ classId, students, initialRecords, initialTitle, ini
                   {included && !absent && (
                     <>
                       <StarsPicker value={stars} onChange={(v) => updateRecord(student.id, { stars: v, absent: false })} />
+                      <button
+                        type="button"
+                        onClick={() => updateRecord(student.id, { diamond: !diamond })}
+                        title={diamond ? "Remover diamante" : "Conceder diamante (+1 ponto bônus)"}
+                        className={cn(
+                          "text-base px-1.5 py-0.5 rounded-md transition-all",
+                          diamond
+                            ? "opacity-100 scale-110"
+                            : "opacity-25 hover:opacity-60",
+                        )}
+                        style={diamond ? { filter: "drop-shadow(0 0 6px #67e8f9)" } : undefined}
+                      >
+                        💎
+                      </button>
                       <button
                         type="button"
                         onClick={() => setExpandedNote(isExpanded ? null : student.id)}
@@ -249,6 +267,7 @@ export function StarsForm({ classId, students, initialRecords, initialTitle, ini
         <span className="text-sm text-[var(--muted)]">
           {includedCount} na aula
           {withStars > 0 && ` · ${withStars} com ★`}
+          {withDiamond > 0 && ` · ${withDiamond} 💎`}
           {absentCount > 0 && ` · ${absentCount} falta${absentCount !== 1 ? "s" : ""}`}
         </span>
         <Button

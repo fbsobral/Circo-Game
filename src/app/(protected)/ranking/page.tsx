@@ -26,18 +26,20 @@ export default async function RankingPage({
     include: {
       starRecords: {
         where: hasDateFilter ? { class: { date: dateFilter } } : undefined,
-        select: { stars: true, absent: true },
+        select: { stars: true, absent: true, diamond: true },
       },
     },
   })
 
   const ranked = users
     .map((u) => {
-      const totalStars = u.starRecords.reduce((sum: number, r: { stars: number; absent: boolean }) => sum + (r.absent ? 0 : r.stars), 0)
-      const expectedClasses = u.starRecords.length // presentes + faltou
+      const totalStars = u.starRecords.reduce((sum: number, r: { stars: number; absent: boolean; diamond: boolean }) => sum + (r.absent ? 0 : r.stars), 0)
+      const totalDiamonds = u.starRecords.filter((r: { absent: boolean; diamond: boolean }) => !r.absent && r.diamond).length
+      const totalPoints = totalStars + totalDiamonds
+      const expectedClasses = u.starRecords.length
       const classCount = u.starRecords.filter((r: { absent: boolean }) => !r.absent).length
-      const score = expectedClasses > 0 ? totalStars / expectedClasses : 0
-      return { ...u, totalStars, classCount, score, expectedClasses }
+      const score = expectedClasses > 0 ? totalPoints / expectedClasses : 0
+      return { ...u, totalStars, totalDiamonds, totalPoints, classCount, score, expectedClasses }
     })
     .filter((u) => u.totalStars > 0 || !hasDateFilter)
     .sort((a, b) => b.score - a.score)

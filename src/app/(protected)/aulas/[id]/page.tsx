@@ -21,7 +21,7 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
       createdBy: { select: { id: true, name: true } },
       starRecords: {
         include: { student: { select: { id: true, name: true, image: true } } },
-        orderBy: [{ absent: "asc" }, { stars: "desc" }],
+        orderBy: [{ absent: "asc" }, { diamond: "desc" }, { stars: "desc" }],
       },
     },
   })
@@ -93,7 +93,10 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
                 faltou
               </span>
             ) : (
-              <StarsDisplay value={r.stars} size="sm" />
+              <div className="flex items-center gap-1.5">
+                <StarsDisplay value={r.stars} size="sm" />
+                {r.diamond && <span className="text-base" title="Diamante" style={{ filter: "drop-shadow(0 0 4px #67e8f9)" }}>💎</span>}
+              </div>
             )}
           </div>
         ))}
