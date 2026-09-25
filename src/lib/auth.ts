@@ -71,15 +71,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           id: dbUser?.id ?? token.sub,
           role: dbUser?.role ?? "student",
           mustChangePassword: dbUser?.mustChangePassword ?? false,
+          image: dbUser?.image ?? null,
+          name: dbUser?.name ?? null,
         }
       }
-      return { sub: token.sub, id: token.id, role: token.role, mustChangePassword: token.mustChangePassword }
+      return { sub: token.sub, id: token.id, role: token.role, mustChangePassword: token.mustChangePassword, image: token.image, name: token.name }
     },
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string
         session.user.role = token.role as string
         session.user.mustChangePassword = token.mustChangePassword as boolean
+        session.user.image = token.image as string | null
+        session.user.name = token.name as string | null
       }
       return session
     },
