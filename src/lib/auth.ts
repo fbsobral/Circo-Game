@@ -64,12 +64,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async jwt({ token, user, trigger }) {
       if (user || trigger === "update") {
-        const dbUser = await db.user.findUnique({ where: { id: (user?.id ?? token.id) as string } })
-        token.id = dbUser?.id ?? token.id
-        token.role = dbUser?.role ?? "student"
-        token.mustChangePassword = dbUser?.mustChangePassword ?? false
+        const dbUser = await db.user.findUnique({ where: { id: (user?.id ?? token.sub ?? token.id) as string } })
+        // Return only what we need — strips Google OAuth tokens from the cookie
+        return {
+          sub: token.sub,
+          id: dbUser?.id ?? token.sub,
+          role: dbUser?.role ?? "student",
+          mustChangePassword: dbUser?.mustChangePassword ?? false,
+        }
       }
-      return token
+      return { sub: token.sub, id: token.id, role: token.role, mustChangePassword: token.mustChangePassword }
     },
     async session({ session, token }) {
       if (token) {
