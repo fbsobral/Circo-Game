@@ -19,6 +19,7 @@ export function NovaAulaForm({ users }: { users: User[] }) {
   const [title, setTitle] = useState("")
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [stars, setStars] = useState<Record<string, number>>({})
+  const [diamonds, setDiamonds] = useState<Record<string, boolean>>({})
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [expandedNote, setExpandedNote] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -45,6 +46,7 @@ export function NovaAulaForm({ users }: { users: User[] }) {
       studentId: u.id,
       stars: stars[u.id] ?? 0,
       note: notes[u.id] ?? "",
+      diamond: diamonds[u.id] ?? false,
     }))
 
     const starsRes = await fetch(`/api/classes/${cls.id}/stars`, {
@@ -96,6 +98,15 @@ export function NovaAulaForm({ users }: { users: User[] }) {
                 value={stars[u.id] ?? 0}
                 onChange={(v) => setStars((s) => ({ ...s, [u.id]: v }))}
               />
+              <button
+                type="button"
+                onClick={() => setDiamonds((d) => ({ ...d, [u.id]: !d[u.id] }))}
+                title={diamonds[u.id] ? "Remover diamante" : "Conceder diamante (+1 ponto bônus)"}
+                className="text-base px-1 transition-all"
+                style={diamonds[u.id] ? { filter: "drop-shadow(0 0 6px #67e8f9)" } : { opacity: 0.25 }}
+              >
+                💎
+              </button>
               <button
                 type="button"
                 onClick={() => setExpandedNote((n) => (n === u.id ? null : u.id))}
