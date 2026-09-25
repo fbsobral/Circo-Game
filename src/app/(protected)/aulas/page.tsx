@@ -56,7 +56,7 @@ export default async function AulasPage() {
             <Link
               key={cls.id}
               href={`/aulas/${cls.id}`}
-              className="flex items-center gap-5 group min-w-0 overflow-hidden"
+              className="flex items-center gap-5 group min-w-0"
               style={{ animationDelay: `${i * 40}ms` }}
             >
               <div
@@ -71,7 +71,7 @@ export default async function AulasPage() {
               </div>
 
               <div
-                className="flex-1 flex items-center gap-4 rounded-2xl px-5 py-4 transition-all duration-200 group-hover:border-[rgba(201,168,76,0.4)]"
+                className="flex-1 min-w-0 flex items-center gap-4 rounded-2xl px-5 py-4 transition-all duration-200 group-hover:border-[rgba(201,168,76,0.4)]"
                 style={{
                   background: "linear-gradient(160deg, var(--surface) 0%, #0f0f20 100%)",
                   border: "1px solid var(--border)",
@@ -82,7 +82,7 @@ export default async function AulasPage() {
                   <div className="font-semibold text-sm truncate" style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.05rem" }}>
                     {cls.title || "Aula"}
                   </div>
-                  <div className="text-xs text-[var(--muted)] mt-0.5">
+                  <div className="text-xs text-[var(--muted)] mt-0.5 truncate">
                     {cls._count.starRecords} participante{cls._count.starRecords !== 1 ? "s" : ""}
                     {cls.createdBy?.name ? ` · ${cls.createdBy.name.split(" ")[0]}` : ""}
                   </div>
