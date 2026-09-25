@@ -56,7 +56,7 @@ export default async function AulasPage() {
             <Link
               key={cls.id}
               href={`/aulas/${cls.id}`}
-              className="flex items-center gap-5 group"
+              className="flex items-center gap-5 group min-w-0 overflow-hidden"
               style={{ animationDelay: `${i * 40}ms` }}
             >
               <div
