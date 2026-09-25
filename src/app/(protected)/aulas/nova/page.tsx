@@ -3,7 +3,7 @@ import { NovaAulaForm } from "./nova-aula-form"
 
 export default async function NovaAulaPage() {
   const users = await db.user.findMany({
-    where: { role: "student" },
+    where: { role: { in: ["student", "admin"] } },
     select: { id: true, name: true, image: true },
     orderBy: { name: "asc" },
   })
