@@ -42,8 +42,8 @@ export default async function NotificacoesPage() {
 
       {notifications.length > 0 && (
         <div
-          className="rounded-2xl overflow-hidden divide-y"
-          style={{ border: "1px solid var(--border)", background: "var(--surface)", borderColor: "var(--border)" }}
+          className="rounded-2xl overflow-hidden divide-y divide-[var(--border)]"
+          style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
         >
           {notifications.map((n) => {
             const { icon, bg, color } = typeIcon(n.type)

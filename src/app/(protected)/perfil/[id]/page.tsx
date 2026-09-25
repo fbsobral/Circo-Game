@@ -193,8 +193,8 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             HISTÓRICO DE AULAS
           </h2>
           <div
-            className="rounded-2xl overflow-hidden divide-y"
-            style={{ border: "1px solid var(--border)", background: "var(--surface)", borderColor: "var(--border)" }}
+            className="rounded-2xl overflow-hidden divide-y divide-[var(--border)]"
+            style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
           >
             {user.starRecords.map((r) => (
               <div
