@@ -64,7 +64,7 @@ function LoginForm() {
 
       <form onSubmit={handleCredentials} className="flex flex-col gap-3">
         <Input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
-        <Input type="password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+        <Input type="password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} required />
 
         {(error || errorMsg) && (
           <p className="text-xs text-[var(--danger)]">{error || "Erro de autenticação"}</p>
