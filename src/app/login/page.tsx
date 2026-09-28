@@ -21,13 +21,18 @@ function LoginForm() {
     e.preventDefault()
     setLoading(true)
     setError("")
-    const result = await signIn("credentials", { email, password, redirect: false })
-    setLoading(false)
-    if (result?.error) {
-      setError("E-mail ou senha incorretos")
-    } else {
-      router.push("/feed")
-      router.refresh()
+    try {
+      const result = await signIn("credentials", { email, password, redirect: false })
+      setLoading(false)
+      if (result?.error) {
+        setError("E-mail ou senha incorretos")
+      } else {
+        router.push("/feed")
+        router.refresh()
+      }
+    } catch {
+      setLoading(false)
+      setError("Erro de conexão. Tente limpar os cookies do site e recarregar.")
     }
   }
 
