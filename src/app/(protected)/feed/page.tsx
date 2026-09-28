@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { Avatar } from "@/components/ui/avatar"
 import Link from "next/link"
 import { FeedClient } from "./feed-client"
+import { extractMentionNames } from "@/lib/mentions"
 
 async function MiniRanking() {
   const top = await db.user.findMany({
@@ -136,10 +137,20 @@ export default async function FeedPage() {
 
   const nextCursor = initialData.length === 10 ? initialData[initialData.length - 1].id : null
 
+  const allNames = [...new Set(initialData.flatMap((p) => [
+    ...extractMentionNames(p.content),
+    ...p.comments.flatMap((c) => extractMentionNames(c.content)),
+  ]))]
+  const mentionedUsers = allNames.length
+    ? await db.user.findMany({ where: { name: { in: allNames, mode: "insensitive" } }, select: { id: true, name: true } })
+    : []
+  const mentionMap = Object.fromEntries(mentionedUsers.map((u) => [u.name!.toLowerCase(), u.id]))
+
   const serialized = initialData.map(({ comments, ...p }) => ({
     ...p,
     createdAt: p.createdAt.toISOString(),
     recentComments: comments.map((c) => ({ ...c, createdAt: c.createdAt.toISOString() })),
+    mentionMap,
   }))
 
   return (

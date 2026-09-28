@@ -24,6 +24,7 @@ interface Post {
   likes: { userId: string }[]
   _count: { comments: number }
   recentComments?: Comment[]
+  mentionMap?: Record<string, string>
 }
 
 function timeAgo(date: string) {
@@ -89,18 +90,41 @@ function IconComment() {
 
 interface MentionUser { id: string; name: string | null; image: string | null }
 
-function highlightMentions(text: string) {
-  // Match @todos or @CapitalizedName (stops before lowercase words — avoids eating the whole sentence)
+function highlightMentions(text: string, mentionMap: Record<string, string> = {}, overlay = false) {
   const parts = text.split(/(@todos|@\p{Lu}\S*(?:\s+\p{Lu}\S*)*)/gu)
   return parts.map((part, i) => {
-    if (!part.startsWith("@")) return part
+    if (!part.startsWith("@")) {
+      return overlay ? <span key={i} style={{ color: "transparent" }}>{part}</span> : part
+    }
     const isBroadcast = part.toLowerCase() === "@todos"
-    return (
-      <span key={i} style={{ color: isBroadcast ? "#a78bfa" : "var(--primary)", fontWeight: 600 }}>
-        {part}
-      </span>
-    )
+    const color = isBroadcast ? "#a78bfa" : "var(--primary)"
+    const userId = !isBroadcast ? mentionMap[part.slice(1).toLowerCase()] : undefined
+    if (!overlay && userId) {
+      return <Link key={i} href={`/perfil/${userId}`} style={{ color, fontWeight: 600 }}>{part}</Link>
+    }
+    return <span key={i} style={{ color, fontWeight: 600 }}>{part}</span>
   })
+}
+
+function getCaretCoords(el: HTMLTextAreaElement, pos: number) {
+  const mirror = document.createElement("div")
+  const cs = getComputedStyle(el)
+  const rect = el.getBoundingClientRect()
+  Object.assign(mirror.style, {
+    position: "fixed", top: rect.top + "px", left: "-9999px",
+    visibility: "hidden", width: rect.width + "px",
+    padding: cs.padding, font: cs.font, lineHeight: cs.lineHeight,
+    whiteSpace: "pre-wrap", wordBreak: "break-word", boxSizing: cs.boxSizing,
+  })
+  mirror.textContent = el.value.slice(0, pos)
+  const span = document.createElement("span")
+  span.textContent = "​"
+  mirror.appendChild(span)
+  document.body.appendChild(mirror)
+  const spanTop = span.getBoundingClientRect().top
+  document.body.removeChild(mirror)
+  const lineH = parseFloat(cs.lineHeight) || 24
+  return { top: spanTop - el.scrollTop + lineH, left: rect.left + parseInt(cs.paddingLeft || "0") }
 }
 
 function useMentionUsers() {
@@ -116,13 +140,18 @@ function useMentionUsers() {
 }
 
 function MentionDropdown({
-  users, query, onSelect,
-}: { users: MentionUser[]; query: string; onSelect: (name: string) => void }) {
+  users, query, onSelect, caretCoords,
+}: { users: MentionUser[]; query: string; onSelect: (name: string) => void; caretCoords?: { top: number; left: number } | null }) {
   const showTodos = "todos".includes(query.toLowerCase())
   const filtered = users.filter((u) => u.name?.toLowerCase().includes(query.toLowerCase())).slice(0, 6)
   const ref = useRef<HTMLDivElement>(null)
   const flipUp = useFlipUp(ref)
   if (!showTodos && !filtered.length) return null
+
+  const fixedStyle = caretCoords
+    ? { position: "fixed" as const, top: caretCoords.top, left: caretCoords.left }
+    : { ...(flipUp ? { bottom: "100%", marginBottom: 4 } : { top: "100%", marginTop: 4 }), left: 0 }
+
   return (
     <div
       ref={ref}
@@ -130,8 +159,7 @@ function MentionDropdown({
       style={{
         background: "var(--surface)",
         border: "1px solid var(--border)",
-        ...(flipUp ? { bottom: "100%", marginBottom: 4 } : { top: "100%", marginTop: 4 }),
-        left: 0,
+        ...fixedStyle,
         minWidth: 200,
       }}
     >
@@ -173,6 +201,7 @@ function useMentionAutocomplete(
 ) {
   const [mentionQuery, setMentionQuery] = useState<string | null>(null)
   const [mentionStart, setMentionStart] = useState(0)
+  const [caretCoords, setCaretCoords] = useState<{ top: number; left: number } | null>(null)
 
   function onKeyUp() {
     const el = ref.current
@@ -183,13 +212,16 @@ function useMentionAutocomplete(
     if (match) {
       setMentionQuery(match[1])
       setMentionStart(cursor - match[0].length)
+      setCaretCoords(getCaretCoords(el, cursor - match[0].length))
       onFocusMentions()
     } else if (before.endsWith("@")) {
       setMentionQuery("")
       setMentionStart(cursor - 1)
+      setCaretCoords(getCaretCoords(el, cursor - 1))
       onFocusMentions()
     } else {
       setMentionQuery(null)
+      setCaretCoords(null)
     }
   }
 
@@ -202,6 +234,7 @@ function useMentionAutocomplete(
     const newVal = `${before}@${name} ${after}`
     setValue(newVal)
     setMentionQuery(null)
+    setCaretCoords(null)
     setTimeout(() => {
       el.focus()
       const pos = mentionStart + name.length + 2
@@ -209,7 +242,7 @@ function useMentionAutocomplete(
     }, 0)
   }
 
-  return { mentionQuery, selectMention, onKeyUp }
+  return { mentionQuery, selectMention, onKeyUp, caretCoords }
 }
 
 const EMOJI_CATEGORIES: { label: string; emojis: string[] }[] = [
@@ -397,6 +430,52 @@ function CommentLikeButton({ commentId, initialLikes, currentUserId }: { comment
   )
 }
 
+function CommentRow({ comment, postId, currentUserId, mentionMap, onDelete }: {
+  comment: Comment
+  postId: string
+  currentUserId: string
+  mentionMap?: Record<string, string>
+  onDelete: (id: string) => void
+}) {
+  const [deleting, setDeleting] = useState(false)
+  const isAuthor = comment.author.id === currentUserId
+
+  async function handleDelete() {
+    if (!confirm("Excluir este comentário?")) return
+    setDeleting(true)
+    await fetch(`/api/posts/${postId}/comments/${comment.id}`, { method: "DELETE" })
+    onDelete(comment.id)
+  }
+
+  return (
+    <div className="flex gap-2.5">
+      <Link href={`/perfil/${comment.author.id}`} className="flex-shrink-0">
+        <Avatar name={comment.author.name} image={comment.author.image} size="sm" />
+      </Link>
+      <div className="flex-1 min-w-0">
+        <div className="rounded-xl px-3 py-2" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+          <Link href={`/perfil/${comment.author.id}`} className="user-name text-xs font-semibold mr-2 hover:underline">{comment.author.name}</Link>
+          <span className="text-sm leading-relaxed">{highlightMentions(comment.content, mentionMap)}</span>
+        </div>
+        <div className="flex items-center gap-3 pl-3 mt-1">
+          <span className="text-[10px] text-[var(--muted)]">{timeAgo(comment.createdAt)}</span>
+          <CommentLikeButton commentId={comment.id} initialLikes={comment.likes} currentUserId={currentUserId} />
+          {isAuthor && (
+            <button
+              onClick={handleDelete}
+              disabled={deleting}
+              className="text-[10px] transition-colors hover:text-[var(--danger,#e05c7a)]"
+              style={{ color: "var(--muted)" }}
+            >
+              excluir
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function PostCard({ post, currentUserId, onDelete, onEdit }: {
   post: Post
   currentUserId: string
@@ -414,7 +493,7 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
   const [commentLoading, setCommentLoading] = useState(false)
   const commentRef = useRef<HTMLTextAreaElement>(null)
   const { users: commentUsers, load: loadCommentUsers } = useMentionUsers()
-  const { mentionQuery: commentMentionQuery, selectMention: selectCommentMention, onKeyUp: commentOnKeyUp } = useMentionAutocomplete(commentRef, commentText, setCommentText, commentUsers, loadCommentUsers)
+  const { mentionQuery: commentMentionQuery, selectMention: selectCommentMention, onKeyUp: commentOnKeyUp, caretCoords: commentCaretCoords } = useMentionAutocomplete(commentRef, commentText, setCommentText, commentUsers, loadCommentUsers)
   const [commentCount, setCommentCount] = useState(post._count.comments)
   const [deleting, setDeleting] = useState(false)
   const [imageIndex, setImageIndex] = useState(0)
@@ -426,7 +505,7 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
   const editRef = useRef<HTMLTextAreaElement>(null)
   const insertEditEmoji = useEmojiInsert(editRef, setEditContent)
   const { users: editUsers, load: loadEditUsers } = useMentionUsers()
-  const { mentionQuery: editMentionQuery, selectMention: selectEditMention, onKeyUp: editOnKeyUp } = useMentionAutocomplete(editRef, editContent, setEditContent, editUsers, loadEditUsers)
+  const { mentionQuery: editMentionQuery, selectMention: selectEditMention, onKeyUp: editOnKeyUp, caretCoords: editCaretCoords } = useMentionAutocomplete(editRef, editContent, setEditContent, editUsers, loadEditUsers)
 
   const images = post.imageUrl ? post.imageUrl.split("|||") : []
   const isAuthor = post.author.id === currentUserId
@@ -535,7 +614,7 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
                 style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
               />
               {editMentionQuery !== null && (
-                <MentionDropdown users={editUsers} query={editMentionQuery} onSelect={selectEditMention} />
+                <MentionDropdown users={editUsers} query={editMentionQuery} onSelect={selectEditMention} caretCoords={editCaretCoords} />
               )}
               {showEditEmoji && (
                 <EmojiPicker onSelect={insertEditEmoji} onClose={() => setShowEditEmoji(false)} />
@@ -557,7 +636,7 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
             </div>
           </form>
         ) : (
-          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text)" }}>{highlightMentions(post.content)}</p>
+          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text)" }}>{highlightMentions(post.content, post.mentionMap)}</p>
         )}
       </div>
 
@@ -641,21 +720,17 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
       {showComments && !editing && (
         <div className="border-t border-[var(--border)] px-4 py-3 space-y-3" style={{ background: "var(--surface-2)" }}>
           {comments.map((c) => (
-            <div key={c.id} className="flex gap-2.5">
-              <Link href={`/perfil/${c.author.id}`} className="flex-shrink-0">
-                <Avatar name={c.author.name} image={c.author.image} size="sm" />
-              </Link>
-              <div className="flex-1 min-w-0">
-                <div className="rounded-xl px-3 py-2" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-                  <Link href={`/perfil/${c.author.id}`} className="user-name text-xs font-semibold mr-2 hover:underline">{c.author.name}</Link>
-                  <span className="text-sm leading-relaxed">{highlightMentions(c.content)}</span>
-                </div>
-                <div className="flex items-center gap-3 pl-3 mt-1">
-                  <span className="text-[10px] text-[var(--muted)]">{timeAgo(c.createdAt)}</span>
-                  <CommentLikeButton commentId={c.id} initialLikes={c.likes} currentUserId={currentUserId} />
-                </div>
-              </div>
-            </div>
+            <CommentRow
+              key={c.id}
+              comment={c}
+              postId={post.id}
+              currentUserId={currentUserId}
+              mentionMap={post.mentionMap}
+              onDelete={(id) => {
+                setComments((prev) => prev.filter((x) => x.id !== id))
+                setCommentCount((n) => n - 1)
+              }}
+            />
           ))}
 
           <form onSubmit={submitComment} className="flex gap-2 pt-1">
@@ -678,7 +753,7 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
                 style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
               />
               {commentMentionQuery !== null && (
-                <MentionDropdown users={commentUsers} query={commentMentionQuery} onSelect={selectCommentMention} />
+                <MentionDropdown users={commentUsers} query={commentMentionQuery} onSelect={selectCommentMention} caretCoords={commentCaretCoords} />
               )}
             </div>
             <Button type="submit" size="sm" loading={commentLoading} disabled={!commentText.trim()}>↑</Button>
@@ -700,7 +775,7 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const insertEmoji = useEmojiInsert(textareaRef, setContent)
   const { users, load: loadUsers } = useMentionUsers()
-  const { mentionQuery, selectMention, onKeyUp } = useMentionAutocomplete(textareaRef, content, setContent, users, loadUsers)
+  const { mentionQuery, selectMention, onKeyUp, caretCoords } = useMentionAutocomplete(textareaRef, content, setContent, users, loadUsers)
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
@@ -741,6 +816,7 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
         <Avatar name={currentUserName} image={currentUserImage} size="sm" />
         <div className="flex-1">
           <div className="relative">
+            {/* Textarea: text is invisible; caret and placeholder remain visible */}
             <textarea
               ref={textareaRef}
               placeholder="Compartilhe algo com a turma..."
@@ -749,11 +825,19 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
               onFocus={() => { setExpanded(true); loadUsers() }}
               onKeyUp={onKeyUp}
               rows={expanded ? 3 : 1}
-              className="w-full bg-transparent text-sm resize-none focus:outline-none leading-relaxed"
-              style={{ color: "var(--text)", caretColor: "var(--primary)", fontSize: "16px" }}
+              className="w-full bg-transparent text-sm resize-none focus:outline-none leading-relaxed placeholder:text-[var(--muted)]"
+              style={{ color: "transparent", caretColor: "var(--text)", fontSize: "16px" }}
             />
+            {/* Overlay on top (declared after textarea → naturally higher in stacking order) */}
+            <div
+              aria-hidden
+              className="absolute inset-0 text-sm leading-relaxed pointer-events-none select-none overflow-hidden whitespace-pre-wrap break-words"
+              style={{ fontSize: "16px", padding: "2px 0" }}
+            >
+              {highlightMentions(content, {}, true)}
+            </div>
             {mentionQuery !== null && (
-              <MentionDropdown users={users} query={mentionQuery} onSelect={selectMention} />
+              <MentionDropdown users={users} query={mentionQuery} onSelect={selectMention} caretCoords={caretCoords} />
             )}
           </div>
 

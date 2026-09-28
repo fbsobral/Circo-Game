@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { notifyMentions } from "@/lib/mentions"
+import { notifyMentions, extractMentionNames } from "@/lib/mentions"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -30,7 +30,16 @@ export async function GET(req: NextRequest) {
     },
   })
 
-  const posts = rawPosts.map(({ comments, ...p }) => ({ ...p, recentComments: comments }))
+  const allNames = [...new Set(rawPosts.flatMap((p) => [
+    ...extractMentionNames(p.content),
+    ...p.comments.flatMap((c) => extractMentionNames(c.content)),
+  ]))]
+  const mentionedUsers = allNames.length
+    ? await db.user.findMany({ where: { name: { in: allNames, mode: "insensitive" } }, select: { id: true, name: true } })
+    : []
+  const mentionMap = Object.fromEntries(mentionedUsers.map((u) => [u.name!.toLowerCase(), u.id]))
+
+  const posts = rawPosts.map(({ comments, ...p }) => ({ ...p, recentComments: comments, mentionMap }))
   const nextCursor = posts.length === take ? posts[posts.length - 1].id : null
   return NextResponse.json({ posts, nextCursor })
 }
