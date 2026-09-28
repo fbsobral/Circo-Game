@@ -9,7 +9,7 @@ import { db } from "./db"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(db),
-  session: { strategy: "jwt" },
+  session: { strategy: "database" },
   trustHost: true,
   providers: [
     ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
@@ -62,29 +62,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       user.id = existing.id
       return true
     },
-    async jwt({ token, user, trigger }) {
-      if (user || trigger === "update") {
-        const dbUser = await db.user.findUnique({ where: { id: (user?.id ?? token.sub ?? token.id) as string } })
-        // Return only what we need — strips Google OAuth tokens from the cookie
-        return {
-          sub: token.sub,
-          id: dbUser?.id ?? token.sub,
-          role: dbUser?.role ?? "student",
-          mustChangePassword: dbUser?.mustChangePassword ?? false,
-          image: dbUser?.image ?? null,
-          name: dbUser?.name ?? null,
-        }
-      }
-      return { sub: token.sub, id: token.id, role: token.role, mustChangePassword: token.mustChangePassword, image: token.image, name: token.name }
-    },
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string
-        session.user.role = token.role as string
-        session.user.mustChangePassword = token.mustChangePassword as boolean
-        session.user.image = token.image as string | null
-        session.user.name = token.name as string | null
-      }
+    async session({ session, user }) {
+      const dbUser = await db.user.findUnique({
+        where: { id: user.id },
+        select: { role: true, mustChangePassword: true, image: true, name: true },
+      })
+      session.user.id = user.id
+      session.user.role = dbUser?.role ?? "student"
+      session.user.mustChangePassword = dbUser?.mustChangePassword ?? false
+      session.user.image = dbUser?.image ?? null
+      session.user.name = dbUser?.name ?? null
       return session
     },
   },
