@@ -7,6 +7,7 @@ import { StarsDisplay } from "@/components/stars"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { DeleteClassButton } from "./delete-class-button"
+import { ClassComments } from "./class-comments"
 
 export default async function AulaDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -22,6 +23,13 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
       starRecords: {
         include: { student: { select: { id: true, name: true, image: true } } },
         orderBy: [{ absent: "asc" }, { diamond: "desc" }, { stars: "desc" }],
+      },
+      comments: {
+        orderBy: { createdAt: "asc" },
+        include: {
+          author: { select: { id: true, name: true, image: true } },
+          likes: { select: { userId: true } },
+        },
       },
     },
   })
@@ -111,6 +119,12 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
           </div>
         )}
       </div>
+      {/* Comments */}
+      <ClassComments
+        classId={id}
+        currentUserId={userId}
+        initialComments={cls.comments.map((c) => ({ ...c, createdAt: c.createdAt.toISOString() }))}
+      />
     </div>
   )
 }
