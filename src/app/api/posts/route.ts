@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const cursor = searchParams.get("cursor")
   const take = 10
 
-  const posts = await db.post.findMany({
+  const rawPosts = await db.post.findMany({
     take,
     ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
     orderBy: { createdAt: "desc" },
@@ -19,9 +19,18 @@ export async function GET(req: NextRequest) {
       author: { select: { id: true, name: true, image: true } },
       likes: { select: { userId: true } },
       _count: { select: { comments: true } },
+      comments: {
+        orderBy: { createdAt: "asc" },
+        take: 3,
+        include: {
+          author: { select: { id: true, name: true, image: true } },
+          likes: { select: { userId: true } },
+        },
+      },
     },
   })
 
+  const posts = rawPosts.map(({ comments, ...p }) => ({ ...p, recentComments: comments }))
   const nextCursor = posts.length === take ? posts[posts.length - 1].id : null
   return NextResponse.json({ posts, nextCursor })
 }

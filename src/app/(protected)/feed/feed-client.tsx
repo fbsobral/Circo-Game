@@ -23,6 +23,7 @@ interface Post {
   author: Author
   likes: { userId: string }[]
   _count: { comments: number }
+  recentComments?: Comment[]
 }
 
 function timeAgo(date: string) {
@@ -405,9 +406,10 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
   const likedByMe = post.likes.some((l) => l.userId === currentUserId)
   const [liked, setLiked] = useState(likedByMe)
   const [likeCount, setLikeCount] = useState(post.likes.length)
-  const [showComments, setShowComments] = useState(false)
-  const [comments, setComments] = useState<Comment[]>([])
-  const [commentsLoaded, setCommentsLoaded] = useState(false)
+  const hasRecent = (post.recentComments?.length ?? 0) > 0
+  const [showComments, setShowComments] = useState(hasRecent)
+  const [comments, setComments] = useState<Comment[]>(post.recentComments ?? [])
+  const [commentsLoaded, setCommentsLoaded] = useState(hasRecent)
   const [commentText, setCommentText] = useState("")
   const [commentLoading, setCommentLoading] = useState(false)
   const commentRef = useRef<HTMLTextAreaElement>(null)

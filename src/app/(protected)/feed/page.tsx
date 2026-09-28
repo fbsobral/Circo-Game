@@ -123,14 +123,23 @@ export default async function FeedPage() {
       author: { select: { id: true, name: true, image: true } },
       likes: { select: { userId: true } },
       _count: { select: { comments: true } },
+      comments: {
+        orderBy: { createdAt: "asc" },
+        take: 3,
+        include: {
+          author: { select: { id: true, name: true, image: true } },
+          likes: { select: { userId: true } },
+        },
+      },
     },
   })
 
   const nextCursor = initialData.length === 10 ? initialData[initialData.length - 1].id : null
 
-  const serialized = initialData.map((p) => ({
+  const serialized = initialData.map(({ comments, ...p }) => ({
     ...p,
     createdAt: p.createdAt.toISOString(),
+    recentComments: comments.map((c) => ({ ...c, createdAt: c.createdAt.toISOString() })),
   }))
 
   return (
