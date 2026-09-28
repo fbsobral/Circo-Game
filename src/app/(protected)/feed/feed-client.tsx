@@ -89,7 +89,8 @@ function IconComment() {
 interface MentionUser { id: string; name: string | null; image: string | null }
 
 function highlightMentions(text: string) {
-  const parts = text.split(/(@\S+(?:\s+\S+)*)/g)
+  // Match @todos or @CapitalizedName (stops before lowercase words — avoids eating the whole sentence)
+  const parts = text.split(/(@todos|@\p{Lu}\S*(?:\s+\p{Lu}\S*)*)/gu)
   return parts.map((part, i) => {
     if (!part.startsWith("@")) return part
     const isBroadcast = part.toLowerCase() === "@todos"

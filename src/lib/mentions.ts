@@ -3,7 +3,7 @@ import { sendMentionEmail } from "./email"
 import { createNotification, createBroadcastNotifications } from "./notifications"
 
 function extractMentionNames(content: string): string[] {
-  const matches = content.match(/@([^\s@#]+(?:\s+[^\s@#]+)*)/g) ?? []
+  const matches = content.match(/(@todos|@\p{Lu}\S*(?:\s+\p{Lu}\S*)*)/gu) ?? []
   return [...new Set(matches.map((m) => m.slice(1).trim()))]
 }
 
