@@ -38,7 +38,7 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
   const [formError, setFormError] = useState("")
   const [formLoading, setFormLoading] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({ name: "", email: "", userRole: "student" as Role, weeklyFrequency: 1 })
+  const [editForm, setEditForm] = useState({ name: "", email: "", userRole: "student" as Role, weeklyFrequency: 1, newPassword: "" })
   const [editError, setEditError] = useState("")
   const [editLoading, setEditLoading] = useState(false)
   const [resendingId, setResendingId] = useState<string | null>(null)
@@ -65,7 +65,7 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
 
   function startEdit(user: User) {
     setEditingId(user.id)
-    setEditForm({ name: user.name ?? "", email: user.email ?? "", userRole: user.role, weeklyFrequency: user.weeklyFrequency ?? 1 })
+    setEditForm({ name: user.name ?? "", email: user.email ?? "", userRole: user.role, weeklyFrequency: user.weeklyFrequency ?? 1, newPassword: "" })
     setEditError("")
   }
 
@@ -76,7 +76,7 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
     const res = await fetch("/api/admin/users", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "edit", userId: editingId, ...editForm }),
+      body: JSON.stringify({ action: "edit", userId: editingId, ...editForm, newPassword: editForm.newPassword || undefined }),
     })
     const data = await res.json()
     setEditLoading(false)
@@ -286,6 +286,13 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
                       <option value="professor">Professor</option>
                       {!isProfessor && <option value="admin">Admin</option>}
                     </select>
+                    <Input
+                      type="password"
+                      placeholder="Nova senha (opcional)"
+                      value={editForm.newPassword}
+                      onChange={(e) => setEditForm((f) => ({ ...f, newPassword: e.target.value }))}
+                      autoComplete="new-password"
+                    />
                   </div>
                   {editError && <p className="text-xs text-[var(--danger)]">{editError}</p>}
                   <div className="flex justify-end">
