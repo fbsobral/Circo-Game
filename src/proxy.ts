@@ -5,7 +5,7 @@ export default auth((req) => {
   const { pathname } = req.nextUrl
   const session = req.auth
 
-  const isPublic = pathname === "/login" || pathname.startsWith("/api/auth") || pathname.startsWith("/api/reset-password") || pathname.startsWith("/reset-password") || pathname.startsWith("/forgot-password") || pathname === "/trocar-senha" || pathname === "/api/change-password" || pathname === "/api/sair"
+  const isPublic = pathname === "/login" || pathname.startsWith("/api/auth") || pathname.startsWith("/api/reset-password") || pathname.startsWith("/reset-password") || pathname.startsWith("/forgot-password") || pathname === "/trocar-senha" || pathname === "/api/change-password" || pathname === "/api/sair" || pathname === "/api/auth/login"
 
   if (!session && !isPublic) {
     return NextResponse.redirect(new URL("/login", req.url))

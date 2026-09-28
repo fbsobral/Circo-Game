@@ -22,17 +22,21 @@ function LoginForm() {
     setLoading(true)
     setError("")
     try {
-      const result = await signIn("credentials", { email, password, redirect: false })
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await res.json()
       setLoading(false)
-      if (result?.error) {
-        setError("E-mail ou senha incorretos")
-      } else {
-        router.push("/feed")
-        router.refresh()
+      if (!res.ok) {
+        setError(data.error ?? "E-mail ou senha incorretos")
+        return
       }
+      window.location.href = data.mustChangePassword ? "/trocar-senha" : "/feed"
     } catch {
       setLoading(false)
-      setError("Erro de conexão. Tente limpar os cookies do site e recarregar.")
+      setError("Erro de conexão. Tente novamente.")
     }
   }
 
