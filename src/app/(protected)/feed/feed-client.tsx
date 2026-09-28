@@ -93,9 +93,7 @@ interface MentionUser { id: string; name: string | null; image: string | null }
 function highlightMentions(text: string, mentionMap: Record<string, string> = {}, overlay = false) {
   const parts = text.split(/(@todos|@\p{Lu}\S*(?:\s+\p{Lu}\S*)*)/gu)
   return parts.map((part, i) => {
-    if (!part.startsWith("@")) {
-      return overlay ? <span key={i} style={{ color: "transparent" }}>{part}</span> : part
-    }
+    if (!part.startsWith("@")) return part
     const isBroadcast = part.toLowerCase() === "@todos"
     const color = isBroadcast ? "#a78bfa" : "var(--primary)"
     const userId = !isBroadcast ? mentionMap[part.slice(1).toLowerCase()] : undefined
