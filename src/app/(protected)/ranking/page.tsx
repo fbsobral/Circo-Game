@@ -22,7 +22,7 @@ export default async function RankingPage({
   const hasDateFilter = from || to
 
   const users = await db.user.findMany({
-    where: { role: "student" },
+    where: { role: { in: ["student", "admin"] } },
     include: {
       starRecords: {
         where: hasDateFilter ? { class: { date: dateFilter } } : undefined,

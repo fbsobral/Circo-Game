@@ -7,7 +7,7 @@ import { extractMentionNames } from "@/lib/mentions"
 
 async function MiniRanking() {
   const top = await db.user.findMany({
-    where: { role: "student" },
+    where: { role: { in: ["student", "admin"] } },
     include: { starRecords: { select: { stars: true } } },
     take: 50,
   })
