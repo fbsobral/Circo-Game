@@ -109,7 +109,7 @@ export function ClassComments({ classId, currentUserId, initialComments }: Props
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [text, setText] = useState("")
   const [loading, setLoading] = useState(false)
-  const ref = useRef<HTMLTextAreaElement>(null)
+  const ref = useRef<HTMLInputElement>(null)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -149,24 +149,22 @@ export function ClassComments({ classId, currentUserId, initialComments }: Props
           />
         ))}
 
-        <form onSubmit={submit} className="flex gap-2 pt-1">
-          <div className="flex-1">
-            <textarea
-              ref={ref}
-              placeholder="Escreva um comentário..."
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault()
-                  submit(e as unknown as React.FormEvent)
-                }
-              }}
-              rows={1}
-              className="w-full rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:border-[var(--primary)] transition-colors"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
-            />
-          </div>
+        <form onSubmit={submit} className="flex items-center gap-2 pt-1">
+          <input
+            ref={ref}
+            type="text"
+            placeholder="Escreva um comentário..."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault()
+                submit(e as unknown as React.FormEvent)
+              }
+            }}
+            className="flex-1 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
+          />
           <Button type="submit" size="sm" loading={loading} disabled={!text.trim()}>↑</Button>
         </form>
       </div>

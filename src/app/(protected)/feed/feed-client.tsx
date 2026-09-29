@@ -191,7 +191,7 @@ function MentionDropdown({
 }
 
 function useMentionAutocomplete(
-  ref: React.RefObject<HTMLTextAreaElement | null>,
+  ref: React.RefObject<HTMLTextAreaElement | HTMLInputElement | null>,
   value: string,
   setValue: (v: string) => void,
   users: MentionUser[],
@@ -207,15 +207,16 @@ function useMentionAutocomplete(
     const cursor = el.selectionStart ?? 0
     const before = el.value.slice(0, cursor)
     const match = before.match(/@(\w[\w\s]*)$/)
+    const coords = el instanceof HTMLTextAreaElement ? getCaretCoords(el, cursor - (match ? match[0].length : 1)) : null
     if (match) {
       setMentionQuery(match[1])
       setMentionStart(cursor - match[0].length)
-      setCaretCoords(getCaretCoords(el, cursor - match[0].length))
+      setCaretCoords(coords)
       onFocusMentions()
     } else if (before.endsWith("@")) {
       setMentionQuery("")
       setMentionStart(cursor - 1)
-      setCaretCoords(getCaretCoords(el, cursor - 1))
+      setCaretCoords(coords)
       onFocusMentions()
     } else {
       setMentionQuery(null)
@@ -489,7 +490,7 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
   const [commentsLoaded, setCommentsLoaded] = useState(hasRecent)
   const [commentText, setCommentText] = useState("")
   const [commentLoading, setCommentLoading] = useState(false)
-  const commentRef = useRef<HTMLTextAreaElement>(null)
+  const commentRef = useRef<HTMLInputElement>(null)
   const { users: commentUsers, load: loadCommentUsers } = useMentionUsers()
   const { mentionQuery: commentMentionQuery, selectMention: selectCommentMention, onKeyUp: commentOnKeyUp, caretCoords: commentCaretCoords } = useMentionAutocomplete(commentRef, commentText, setCommentText, commentUsers, loadCommentUsers)
   const [commentCount, setCommentCount] = useState(post._count.comments)
@@ -731,23 +732,23 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
             />
           ))}
 
-          <form onSubmit={submitComment} className="flex gap-2 pt-1">
+          <form onSubmit={submitComment} className="flex items-center gap-2 pt-1">
             <div className="relative flex-1">
-              <textarea
-                ref={commentRef}
+              <input
+                ref={commentRef as React.RefObject<HTMLInputElement>}
+                type="text"
                 placeholder="Escreva um comentário..."
                 value={commentText}
                 onChange={(e) => setCommentText(e.target.value)}
                 onFocus={loadCommentUsers}
                 onKeyUp={commentOnKeyUp}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey && commentMentionQuery === null) {
+                  if (e.key === "Enter" && commentMentionQuery === null) {
                     e.preventDefault()
                     submitComment(e as unknown as React.FormEvent)
                   }
                 }}
-                rows={1}
-                className="w-full rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:border-[var(--primary)] transition-colors"
+                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
                 style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
               />
               {commentMentionQuery !== null && (
