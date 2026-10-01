@@ -39,7 +39,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
   const now = new Date()
 
   const allStudents = await db.user.findMany({
-    where: { role: "student" },
+    where: { role: { in: ["student", "admin"] } },
     select: {
       id: true,
       starRecords: { select: { stars: true, absent: true, diamond: true } },
@@ -113,7 +113,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
         </div>
 
         {/* Stats */}
-        {user.role === "student" && (
+        {(user.role === "student" || user.role === "admin") && (
           <div className="grid grid-cols-4 gap-3 mt-5">
             <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
               <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-cormorant)", color: "var(--star-active)" }}>
@@ -144,7 +144,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
       </div>
 
       {/* Score breakdown */}
-      {user.role === "student" && user.starRecords.length > 0 && (
+      {(user.role === "student" || user.role === "admin") && user.starRecords.length > 0 && (
         <div
           className="rounded-2xl px-5 py-4 text-sm space-y-1"
           style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.18)" }}
@@ -225,7 +225,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
         </div>
       )}
 
-      {user.role === "student" && user.starRecords.length === 0 && (
+      {(user.role === "student" || user.role === "admin") && user.starRecords.length === 0 && (
         <div
           className="rounded-2xl py-12 text-center"
           style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
