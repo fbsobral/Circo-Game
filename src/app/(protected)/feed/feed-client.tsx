@@ -496,6 +496,16 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
   const [commentCount, setCommentCount] = useState(post._count.comments)
   const [deleting, setDeleting] = useState(false)
   const [imageIndex, setImageIndex] = useState(0)
+  const [showLikers, setShowLikers] = useState(false)
+  const [likers, setLikers] = useState<{ id: string; name: string | null; image: string | null }[] | null>(null)
+
+  async function openLikers() {
+    setShowLikers(true)
+    if (!likers) {
+      const res = await fetch(`/api/posts/${post.id}/like`)
+      if (res.ok) setLikers(await res.json())
+    }
+  }
 
   const [editing, setEditing] = useState(false)
   const [editContent, setEditContent] = useState(post.content)
@@ -693,6 +703,58 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
         </div>
       )}
 
+      {/* Likers summary bar */}
+      {likeCount > 0 && !editing && (
+        <div className="px-4 pt-2 pb-1 flex items-center gap-2">
+          <div className="flex -space-x-1.5">
+            {post.likes.slice(0, 3).map((l) => (
+              <div key={l.userId} className="w-5 h-5 rounded-full ring-1 ring-[var(--surface)] overflow-hidden flex-shrink-0"
+                style={{ background: "var(--primary)", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
+                ♥
+              </div>
+            ))}
+          </div>
+          <button onClick={openLikers}
+            className="text-xs hover:underline transition-colors"
+            style={{ color: "var(--muted)" }}>
+            {likeCount === 1 ? "1 curtida" : `${likeCount} curtidas`}
+          </button>
+        </div>
+      )}
+
+      {/* Likers modal */}
+      {showLikers && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)" }}
+          onClick={() => setShowLikers(false)}>
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden shadow-2xl"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)]">
+              <span className="font-semibold" style={{ color: "var(--text)" }}>Curtidas</span>
+              <button onClick={() => setShowLikers(false)}
+                className="w-7 h-7 rounded-full flex items-center justify-center hover:bg-[var(--surface-2)] transition-colors text-lg leading-none"
+                style={{ color: "var(--muted)" }}>×</button>
+            </div>
+            <div className="overflow-y-auto max-h-80">
+              {likers === null ? (
+                <div className="px-4 py-6 text-sm text-center" style={{ color: "var(--muted)" }}>Carregando...</div>
+              ) : likers.length === 0 ? (
+                <div className="px-4 py-6 text-sm text-center" style={{ color: "var(--muted)" }}>Ninguém ainda</div>
+              ) : likers.map((u) => (
+                <Link key={u.id} href={`/perfil/${u.id}`}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--surface-2)] transition-colors"
+                  style={{ color: "var(--text)" }}
+                  onClick={() => setShowLikers(false)}>
+                  <Avatar name={u.name} image={u.image} size="md" />
+                  <span className="text-sm font-medium">{u.name ?? "Usuário"}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
       {!editing && (
         <div className="flex items-center gap-1 px-3 pb-3 border-t border-[var(--border)] pt-3">
@@ -702,7 +764,7 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
             style={{ color: liked ? "var(--danger, #e05c7a)" : "var(--muted)" }}
           >
             <IconHeart filled={liked} />
-            <span className="font-medium">{likeCount > 0 ? likeCount : ""}</span>
+            <span className="font-medium">Curtir</span>
           </button>
           <button
             onClick={loadComments}

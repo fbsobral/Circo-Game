@@ -2,6 +2,18 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth()
+  if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
+  const { id } = await params
+  const likes = await db.postLike.findMany({
+    where: { postId: id },
+    include: { user: { select: { id: true, name: true, image: true } } },
+    orderBy: { id: "asc" },
+  })
+  return NextResponse.json(likes.map((l) => l.user))
+}
+
 export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
