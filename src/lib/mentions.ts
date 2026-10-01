@@ -14,11 +14,12 @@ export async function notifyMentions(
   context: "post" | "comment",
   postId: string,
   baseUrl: string,
+  overrideUrl?: string,
 ) {
   const names = extractMentionNames(content)
   if (!names.length) return
 
-  const postUrl = `${baseUrl}/feed#post-${postId}`
+  const postUrl = overrideUrl ?? `${baseUrl}/feed#post-${postId}`
   const preview = content.length > 200 ? content.slice(0, 200) + "…" : content
   const contextLabel = context === "post" ? "publicação" : "comentário"
 
