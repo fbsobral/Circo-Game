@@ -44,8 +44,6 @@ export default async function RankingPage({
     .filter((u) => u.totalStars > 0 || !hasDateFilter)
     .sort((a, b) => b.score - a.score)
 
-  const podium = ranked.length >= 3 ? [ranked[1], ranked[0], ranked[2]] : null
-
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -73,93 +71,6 @@ export default async function RankingPage({
           <RankingFilters />
         </Suspense>
       </div>
-
-      {/* Podium */}
-      {podium && (
-        <div className="relative">
-          <div
-            className="absolute left-1/2 top-0 -translate-x-1/2 w-64 h-64 rounded-full pointer-events-none"
-            style={{ background: "radial-gradient(circle, rgba(201,168,76,0.12) 0%, transparent 70%)", filter: "blur(20px)" }}
-          />
-
-          {/* Mobile: winner on top, 2nd+3rd below */}
-          <div className="md:hidden space-y-3 relative">
-            {/* Winner */}
-            {(() => {
-              const student = podium[1]
-              return (
-                <Link href={`/perfil/${student.id}`} key={student.id}>
-                  <div
-                    className="rounded-2xl p-5 text-center flex flex-col items-center gap-3 relative overflow-hidden"
-                    style={{
-                      background: "linear-gradient(160deg, #1e1a10 0%, #16142a 40%, #111120 100%)",
-                      border: "1px solid rgba(201,168,76,0.5)",
-                      boxShadow: "0 0 40px rgba(201,168,76,0.15), 0 20px 60px rgba(0,0,0,0.5)",
-                    }}
-                  >
-                    <div className="absolute inset-x-0 top-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(201,168,76,0.8), transparent)" }} />
-                    <span className="text-3xl" style={{ filter: "drop-shadow(0 0 8px rgba(201,168,76,0.8))" }}>🥇</span>
-                    <Avatar name={student.name} image={student.image} size="lg" totalStars={student.totalStars} />
-                    <div className="w-full">
-                      <div className="user-name text-base font-semibold truncate" style={{ fontFamily: "var(--font-inter), sans-serif", textTransform: "none" }}>{student.name}</div>
-                      <div className="font-bold mt-1" style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.8rem", color: "var(--star-active)", textShadow: "0 0 20px rgba(240,192,64,0.5)" }}>{student.score.toFixed(1)} ★</div>
-                    </div>
-                  </div>
-                </Link>
-              )
-            })()}
-            {/* 2nd and 3rd */}
-            <div className="grid grid-cols-2 gap-3">
-              {[podium[0], podium[2]].map((student, i) => (
-                <Link href={`/perfil/${student.id}`} key={student.id}>
-                  <div
-                    className="rounded-2xl p-4 text-center flex flex-col items-center gap-2 relative overflow-hidden opacity-90"
-                    style={{ background: "var(--surface)", border: "1px solid var(--border)", boxShadow: "0 4px 20px rgba(0,0,0,0.3)" }}
-                  >
-                    <span className="text-2xl">{i === 0 ? "🥈" : "🥉"}</span>
-                    <Avatar name={student.name} image={student.image} size="md" totalStars={student.totalStars} />
-                    <div className="w-full">
-                      <div className="user-name text-xs font-semibold truncate" style={{ fontFamily: "var(--font-inter), sans-serif", textTransform: "none" }}>{student.name}</div>
-                      <div className="font-bold mt-0.5" style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.1rem", color: "var(--primary)" }}>{student.score.toFixed(1)} ★</div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          {/* Desktop: classic 3-col (silver | gold | bronze) */}
-          <div className="hidden md:grid grid-cols-3 gap-3 relative">
-            {podium.map((student, idx) => {
-              const actualPos = idx === 0 ? 1 : idx === 1 ? 0 : 2
-              const isWinner = idx === 1
-              return (
-                <Link href={`/perfil/${student.id}`} key={student.id}>
-                <div
-                  className={cn(
-                    "rounded-2xl p-5 text-center flex flex-col items-center gap-3 relative overflow-hidden transition-transform",
-                    isWinner ? "scale-105" : "scale-100 opacity-90",
-                  )}
-                  style={{
-                    background: isWinner ? "linear-gradient(160deg, #1e1a10 0%, #16142a 40%, #111120 100%)" : "var(--surface)",
-                    border: isWinner ? "1px solid rgba(201,168,76,0.5)" : "1px solid var(--border)",
-                    boxShadow: isWinner ? "0 0 40px rgba(201,168,76,0.15), 0 20px 60px rgba(0,0,0,0.5)" : "0 4px 20px rgba(0,0,0,0.3)",
-                  }}
-                >
-                  {isWinner && <div className="absolute inset-x-0 top-0 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(201,168,76,0.8), transparent)" }} />}
-                  <span className="text-3xl" style={{ filter: isWinner ? "drop-shadow(0 0 8px rgba(201,168,76,0.8))" : undefined }}>{["🥇", "🥈", "🥉"][actualPos]}</span>
-                  <Avatar name={student.name} image={student.image} size={isWinner ? "lg" : "md"} totalStars={student.totalStars} />
-                  <div className="w-full">
-                    <div className="user-name text-sm font-semibold truncate" style={{ fontSize: isWinner ? "1.1rem" : undefined, fontFamily: "var(--font-inter), sans-serif", textTransform: "none" }}>{student.name}</div>
-                    <div className="font-bold mt-1" style={{ fontFamily: "var(--font-cormorant)", fontSize: isWinner ? "1.6rem" : "1.2rem", color: isWinner ? "var(--star-active)" : "var(--primary)", textShadow: isWinner ? "0 0 20px rgba(240,192,64,0.5)" : undefined }}>{student.score.toFixed(1)} ★</div>
-                  </div>
-                </div>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Full list */}
       <div
