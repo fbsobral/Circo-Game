@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "desc" },
     include: {
       author: { select: { id: true, name: true, image: true } },
-      likes: { select: { userId: true } },
+      likes: { include: { user: { select: { id: true, name: true, image: true } } } },
       _count: { select: { comments: true } },
       comments: {
         orderBy: { createdAt: "asc" },

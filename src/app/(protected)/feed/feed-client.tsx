@@ -15,13 +15,15 @@ interface Comment {
   likes: { userId: string }[]
 }
 
+interface LikeWithUser { userId: string; user: { id: string; name: string | null; image: string | null } }
+
 interface Post {
   id: string
   content: string
   imageUrl: string | null
   createdAt: string
   author: Author
-  likes: { userId: string }[]
+  likes: LikeWithUser[]
   _count: { comments: number }
   recentComments?: Comment[]
   mentionMap?: Record<string, string>
@@ -706,18 +708,23 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
       {/* Likers summary bar */}
       {likeCount > 0 && !editing && (
         <div className="px-4 pt-2 pb-1 flex items-center gap-2">
-          <div className="flex -space-x-1.5">
-            {post.likes.slice(0, 3).map((l) => (
-              <div key={l.userId} className="w-5 h-5 rounded-full ring-1 ring-[var(--surface)] overflow-hidden flex-shrink-0"
-                style={{ background: "var(--primary)", fontSize: 10, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff" }}>
-                ♥
-              </div>
-            ))}
-          </div>
-          <button onClick={openLikers}
-            className="text-xs hover:underline transition-colors"
-            style={{ color: "var(--muted)" }}>
-            {likeCount === 1 ? "1 curtida" : `${likeCount} curtidas`}
+          <button onClick={openLikers} className="flex items-center gap-2 group">
+            <div className="flex -space-x-1.5">
+              {post.likes.slice(0, 3).map((l) => (
+                <div key={l.userId} className="w-5 h-5 rounded-full ring-1 ring-[var(--surface)] overflow-hidden flex-shrink-0"
+                  style={{ background: "var(--surface-2)" }}>
+                  {l.user.image
+                    ? <img src={l.user.image} alt={l.user.name ?? ""} className="w-full h-full object-cover" />
+                    : <div className="w-full h-full flex items-center justify-center text-[8px] font-bold" style={{ color: "var(--primary)" }}>
+                        {(l.user.name ?? "?")[0].toUpperCase()}
+                      </div>
+                  }
+                </div>
+              ))}
+            </div>
+            <span className="text-xs group-hover:underline transition-colors" style={{ color: "var(--muted)" }}>
+              {likeCount === 1 ? "1 curtida" : `${likeCount} curtidas`}
+            </span>
           </button>
         </div>
       )}
