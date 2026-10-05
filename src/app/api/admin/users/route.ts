@@ -50,7 +50,7 @@ export async function GET() {
   }
 
   const users = await db.user.findMany({
-    select: { id: true, name: true, email: true, role: true, image: true, createdAt: true, mustChangePassword: true, weeklyFrequency: true },
+    select: { id: true, name: true, email: true, role: true, image: true, createdAt: true, mustChangePassword: true, weeklyFrequency: true, turma: true },
     orderBy: { createdAt: "asc" },
   })
   return NextResponse.json(users)
@@ -68,7 +68,7 @@ export async function PATCH(req: NextRequest) {
 
   // Edit name/email/role
   if (body.action === "edit") {
-    const { userId, name, email, userRole, weeklyFrequency, newPassword } = body
+    const { userId, name, email, userRole, weeklyFrequency, turma, newPassword } = body
     if (!name || !email) return NextResponse.json({ error: "Nome e e-mail obrigatórios" }, { status: 400 })
     if (userRole === "admin" && role !== "admin") {
       return NextResponse.json({ error: "Somente admins podem definir role admin" }, { status: 403 })
@@ -78,6 +78,7 @@ export async function PATCH(req: NextRequest) {
     const updateData: Record<string, unknown> = { name, email }
     if (userRole && ["admin", "professor", "student"].includes(userRole)) updateData.role = userRole
     if (weeklyFrequency === 1 || weeklyFrequency === 2) updateData.weeklyFrequency = weeklyFrequency
+    updateData.turma = turma?.trim() || null
     if (newPassword && typeof newPassword === "string" && newPassword.length >= 6) {
       updateData.password = await bcrypt.hash(newPassword, 12)
       updateData.mustChangePassword = false
@@ -85,7 +86,7 @@ export async function PATCH(req: NextRequest) {
     const user = await db.user.update({
       where: { id: userId },
       data: updateData,
-      select: { id: true, name: true, email: true, role: true, image: true, createdAt: true, mustChangePassword: true, weeklyFrequency: true },
+      select: { id: true, name: true, email: true, role: true, image: true, createdAt: true, mustChangePassword: true, weeklyFrequency: true, turma: true },
     })
     return NextResponse.json(user)
   }

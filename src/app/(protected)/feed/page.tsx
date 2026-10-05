@@ -5,9 +5,15 @@ import Link from "next/link"
 import { FeedClient } from "./feed-client"
 import { extractMentionNames } from "@/lib/mentions"
 
-async function MiniRanking() {
+async function MiniRanking({ currentUserId }: { currentUserId: string }) {
+  const currentUser = await db.user.findUnique({ where: { id: currentUserId }, select: { turma: true } })
+  const myTurma = currentUser?.turma?.trim() || null
+
   const users = await db.user.findMany({
-    where: { role: { in: ["student", "admin"] } },
+    where: {
+      role: { in: ["student", "admin"] },
+      ...(myTurma ? { turma: myTurma } : {}),
+    },
     include: { starRecords: { select: { stars: true, absent: true, diamond: true } } },
     take: 50,
   })
@@ -36,12 +42,15 @@ async function MiniRanking() {
           className="px-4 py-2 flex items-center justify-between"
           style={{ background: "rgba(201,168,76,0.06)", borderBottom: "1px solid rgba(201,168,76,0.12)" }}
         >
-          <span
-            className="text-sm font-bold tracking-widest"
-            style={{ fontFamily: "var(--font-cormorant)", color: "var(--primary)", textTransform: "uppercase" }}
-          >
-            Ranking
-          </span>
+          <div>
+            <span
+              className="text-sm font-bold tracking-widest"
+              style={{ fontFamily: "var(--font-cormorant)", color: "var(--primary)", textTransform: "uppercase" }}
+            >
+              Ranking
+            </span>
+            {myTurma && <span className="ml-2 text-xs text-[var(--muted)]">{myTurma}</span>}
+          </div>
           <span className="text-xs text-[var(--muted)] group-hover:text-[var(--primary)] transition-colors">Ver tudo →</span>
         </div>
         <div className="divide-y divide-[var(--border)]" style={{ background: "var(--surface)" }}>
@@ -103,7 +112,7 @@ export default async function FeedPage() {
 
   return (
     <div className="space-y-4">
-      <MiniRanking />
+      <MiniRanking currentUserId={userId} />
       <FeedClient
         initialPosts={serialized}
         nextCursor={nextCursor}
