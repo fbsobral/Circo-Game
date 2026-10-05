@@ -17,7 +17,6 @@ interface User {
   createdAt: Date
   mustChangePassword?: boolean
   weeklyFrequency?: number
-  turma?: string | null
 }
 
 const roleLabels: Record<Role, string> = {
@@ -39,7 +38,7 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
   const [formError, setFormError] = useState("")
   const [formLoading, setFormLoading] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({ name: "", email: "", userRole: "student" as Role, weeklyFrequency: 1, turma: "", newPassword: "" })
+  const [editForm, setEditForm] = useState({ name: "", email: "", userRole: "student" as Role, weeklyFrequency: 1, newPassword: "" })
   const [editError, setEditError] = useState("")
   const [editLoading, setEditLoading] = useState(false)
   const [resendingId, setResendingId] = useState<string | null>(null)
@@ -66,7 +65,7 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
 
   function startEdit(user: User) {
     setEditingId(user.id)
-    setEditForm({ name: user.name ?? "", email: user.email ?? "", userRole: user.role, weeklyFrequency: user.weeklyFrequency ?? 1, turma: user.turma ?? "", newPassword: "" })
+    setEditForm({ name: user.name ?? "", email: user.email ?? "", userRole: user.role, weeklyFrequency: user.weeklyFrequency ?? 1, newPassword: "" })
     setEditError("")
   }
 
@@ -204,10 +203,7 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-[var(--muted)]">{user.email}</span>
-                    {user.turma && <span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--surface-2)] text-[var(--muted)]">{user.turma}</span>}
-                  </div>
+                  <span className="text-xs text-[var(--muted)]">{user.email}</span>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <Button
@@ -290,11 +286,6 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
                       <option value="professor">Professor</option>
                       {!isProfessor && <option value="admin">Admin</option>}
                     </select>
-                    <Input
-                      placeholder="Turma (ex: Turma A, Segunda-Quarta)"
-                      value={editForm.turma}
-                      onChange={(e) => setEditForm((f) => ({ ...f, turma: e.target.value }))}
-                    />
                     <Input
                       type="password"
                       placeholder="Nova senha (opcional)"

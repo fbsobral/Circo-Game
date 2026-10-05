@@ -16,7 +16,6 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
       name: true,
       image: true,
       role: true,
-      turma: true,
       createdAt: true,
       starRecords: {
         orderBy: { class: { date: "desc" } },
@@ -39,13 +38,8 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
   const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000
   const now = new Date()
 
-  const myTurma = user.turma?.trim() || null
-
   const allStudents = await db.user.findMany({
-    where: {
-      role: { in: ["student", "admin"] },
-      ...(myTurma ? { turma: myTurma } : {}),
-    },
+    where: { role: { in: ["student", "admin"] } },
     select: {
       id: true,
       starRecords: { select: { stars: true, absent: true, diamond: true } },
@@ -111,11 +105,6 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
               >
                 {roleLabel}
               </span>
-              {myTurma && (
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "var(--surface-2)", color: "var(--muted)" }}>
-                  {myTurma}
-                </span>
-              )}
               <span className="text-xs" style={{ color: "var(--muted)" }}>
                 desde {formatDate(user.createdAt)}
               </span>
@@ -136,7 +125,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
               <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-cormorant)", color: "var(--primary)" }}>
                 {rankPosition > 0 ? `#${rankPosition}` : "—"}
               </div>
-              <div className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>{myTurma ? "na turma" : "no ranking"}</div>
+              <div className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>no ranking</div>
             </div>
             <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
               <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-cormorant)" }}>
