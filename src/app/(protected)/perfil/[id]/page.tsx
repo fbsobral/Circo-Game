@@ -49,7 +49,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
   const scores = allStudents.map((u) => {
     const stars = u.starRecords.reduce((s, r) => s + (r.absent ? 0 : r.stars), 0)
     const diamonds = u.starRecords.filter((r) => !r.absent && r.diamond).length
-    const expected = u.starRecords.length
+    const expected = u.starRecords.filter((r) => r.absent || r.stars > 0).length
     return { id: u.id, score: expected > 0 ? (stars + diamonds) / expected : 0 }
   })
   scores.sort((a, b) => b.score - a.score)
@@ -57,7 +57,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
   const rankPosition = scores.findIndex((s) => s.id === id) + 1
   const myScore = scores.find((s) => s.id === id)?.score ?? 0
 
-  const expectedClasses = user.starRecords.length // presentes + faltou
+  const expectedClasses = user.starRecords.filter((r) => r.absent || r.stars > 0).length
 
   const roleLabel = user.role === "admin" ? "Admin" : user.role === "professor" ? "Professor" : "Aluno"
 

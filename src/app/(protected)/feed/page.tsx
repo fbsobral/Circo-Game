@@ -17,7 +17,7 @@ async function MiniRanking() {
       const totalStars = u.starRecords.reduce((s, r) => s + (r.absent ? 0 : r.stars), 0)
       const totalDiamonds = u.starRecords.filter((r) => !r.absent && r.diamond).length
       const totalPoints = totalStars + totalDiamonds
-      const expectedClasses = u.starRecords.length
+      const expectedClasses = u.starRecords.filter((r) => r.absent || r.stars > 0).length
       const score = expectedClasses > 0 ? totalPoints / expectedClasses : 0
       return { ...u, totalStars, score }
     })

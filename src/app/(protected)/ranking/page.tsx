@@ -36,7 +36,7 @@ export default async function RankingPage({
       const totalStars = u.starRecords.reduce((sum: number, r: { stars: number; absent: boolean; diamond: boolean }) => sum + (r.absent ? 0 : r.stars), 0)
       const totalDiamonds = u.starRecords.filter((r: { absent: boolean; diamond: boolean }) => !r.absent && r.diamond).length
       const totalPoints = totalStars + totalDiamonds
-      const expectedClasses = u.starRecords.length
+      const expectedClasses = u.starRecords.filter((r: { absent: boolean; stars: number }) => r.absent || r.stars > 0).length
       const classCount = u.starRecords.filter((r: { absent: boolean }) => !r.absent).length
       const score = expectedClasses > 0 ? totalPoints / expectedClasses : 0
       return { ...u, totalStars, totalDiamonds, totalPoints, classCount, score, expectedClasses }
