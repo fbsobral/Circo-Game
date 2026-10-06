@@ -22,13 +22,13 @@ export async function createBroadcastNotifications({
   body,
   url,
 }: {
-  excludeUserId: string
+  excludeUserId: string | string[]
   title: string
   body: string
   url?: string
 }) {
   const users = await db.user.findMany({
-    where: { id: { not: excludeUserId } },
+    where: { id: { notIn: Array.isArray(excludeUserId) ? excludeUserId : [excludeUserId] } },
     select: { id: true },
   })
   await db.notification.createMany({

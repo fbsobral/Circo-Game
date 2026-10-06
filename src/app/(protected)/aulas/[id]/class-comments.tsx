@@ -56,10 +56,32 @@ function LikeButton({ commentId, classId, initialLikes, currentUserId }: {
   )
 }
 
-function CommentRow({ comment, classId, currentUserId, onDelete }: {
-  comment: Comment; classId: string; currentUserId: string; onDelete: (id: string) => void
+function CommentRow({ comment, classId, currentUserId, onDelete, onEdit }: {
+  comment: Comment; classId: string; currentUserId: string; onDelete: (id: string) => void; onEdit: (id: string, content: string) => void
 }) {
   const [deleting, setDeleting] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [editText, setEditText] = useState(comment.content)
+  const [saving, setSaving] = useState(false)
+  const editRef = useRef<HTMLInputElement>(null)
+  const { users: editUsers, load: loadEditUsers } = useMentionUsers()
+  const { mentionQuery, selectMention, onKeyUp, caretCoords } = useMentionAutocomplete(editRef, editText, setEditText, loadEditUsers)
+
+  async function handleSave() {
+    const text = editText.trim()
+    if (!text || text === comment.content) { setEditing(false); setEditText(comment.content); return }
+    setSaving(true)
+    const res = await fetch(`/api/classes/${classId}/comments/${comment.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: text }),
+    })
+    setSaving(false)
+    if (res.ok) {
+      onEdit(comment.id, text)
+      setEditing(false)
+    }
+  }
   const isAuthor = comment.author.id === currentUserId
 
   async function handleDelete() {
@@ -79,20 +101,58 @@ function CommentRow({ comment, classId, currentUserId, onDelete }: {
           <Link href={`/perfil/${comment.author.id}`} className="user-name text-xs font-semibold mr-2 hover:underline">
             {comment.author.name}
           </Link>
-          <span className="text-sm leading-relaxed">{comment.content}</span>
+          {editing ? (
+            <div className="relative mt-1">
+              <input
+                ref={editRef}
+                type="text"
+                value={editText}
+                autoFocus
+                onChange={(e) => setEditText(e.target.value)}
+                onFocus={loadEditUsers}
+                onKeyUp={onKeyUp}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && mentionQuery === null) { e.preventDefault(); handleSave() }
+                  if (e.key === "Escape") { setEditing(false); setEditText(comment.content) }
+                }}
+                className="w-full rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-[var(--primary)]"
+                style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
+              />
+              {mentionQuery !== null && (
+                <MentionDropdown users={editUsers} query={mentionQuery} onSelect={selectMention} caretCoords={caretCoords} />
+              )}
+            </div>
+          ) : (
+            <span className="text-sm leading-relaxed">{comment.content}</span>
+          )}
         </div>
         <div className="flex items-center gap-3 pl-3 mt-1">
           <span className="text-[10px] text-[var(--muted)]">{timeAgo(comment.createdAt)}</span>
           <LikeButton commentId={comment.id} classId={classId} initialLikes={comment.likes} currentUserId={currentUserId} />
-          {isAuthor && (
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className="text-[10px] transition-colors hover:text-[var(--danger,#e05c7a)]"
-              style={{ color: "var(--muted)" }}
-            >
-              excluir
-            </button>
+          {isAuthor && editing && (
+            <>
+              <button onClick={handleSave} disabled={saving} className="text-[10px] text-[var(--primary)]">salvar</button>
+              <button onClick={() => { setEditing(false); setEditText(comment.content) }} className="text-[10px]" style={{ color: "var(--muted)" }}>cancelar</button>
+            </>
+          )}
+          {isAuthor && !editing && (
+            <>
+              <button
+                onClick={() => setEditing(true)}
+                className="text-[10px] transition-colors hover:text-[var(--primary)]"
+                style={{ color: "var(--muted)" }}
+              >
+                editar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="text-[10px] transition-colors hover:text-[var(--danger,#e05c7a)]"
+                style={{ color: "var(--muted)" }}
+              >
+                excluir
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -149,6 +209,7 @@ export function ClassComments({ classId, currentUserId, initialComments }: Props
             classId={classId}
             currentUserId={currentUserId}
             onDelete={(id) => setComments((prev) => prev.filter((x) => x.id !== id))}
+            onEdit={(id, content) => setComments((prev) => prev.map((x) => (x.id === id ? { ...x, content } : x)))}
           />
         ))}
 

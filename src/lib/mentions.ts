@@ -15,8 +15,12 @@ export async function notifyMentions(
   postId: string,
   baseUrl: string,
   overrideUrl?: string,
+  previousContent?: string,
 ) {
-  const names = extractMentionNames(content)
+  const previousNames = previousContent ? extractMentionNames(previousContent).map((n) => n.toLowerCase()) : []
+  if (previousNames.includes("todos")) return
+
+  const names = extractMentionNames(content).filter((n) => !previousNames.includes(n.toLowerCase()))
   if (!names.length) return
 
   const postUrl = overrideUrl ?? `${baseUrl}/feed#post-${postId}`
@@ -25,13 +29,21 @@ export async function notifyMentions(
 
   // Handle @todos
   if (names.some((n) => n.toLowerCase() === "todos")) {
+    const alreadyNotified = previousNames.length
+      ? await db.user.findMany({
+          where: { name: { in: previousNames, mode: "insensitive" } },
+          select: { id: true },
+        })
+      : []
+    const excludeIds = [authorId, ...alreadyNotified.map((u) => u.id)]
+
     const allUsers = await db.user.findMany({
-      where: { id: { not: authorId } },
+      where: { id: { notIn: excludeIds } },
       select: { id: true, name: true, email: true },
     })
 
     await createBroadcastNotifications({
-      excludeUserId: authorId,
+      excludeUserId: excludeIds,
       title: `${authorName} mencionou @todos`,
       body: preview,
       url: postUrl,
@@ -42,6 +54,7 @@ export async function notifyMentions(
         sendMentionEmail(u.email, u.name ?? "Aluno", authorName, context, postUrl, preview)
       )
     )
+    return
   }
 
   // Handle individual mentions (skip "todos")
