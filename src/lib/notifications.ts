@@ -8,7 +8,7 @@ export async function createNotification({
   url,
 }: {
   userId: string
-  type: "mention" | "stars" | "broadcast"
+  type: "mention" | "stars" | "broadcast" | "comment"
   title: string
   body: string
   url?: string

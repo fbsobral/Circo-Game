@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react"
 import Link from "next/link"
 import { Avatar } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { highlightMentions, MentionInput } from "@/components/mention-autocomplete"
+import { highlightMentions, MentionInput, MentionDropdown, useMentionUsers, useMentionAutocomplete } from "@/components/mention-autocomplete"
 
 interface Author { id: string; name: string | null; image: string | null }
 
@@ -89,148 +89,6 @@ function IconComment() {
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
     </svg>
   )
-}
-
-interface MentionUser { id: string; name: string | null; image: string | null }
-
-function getCaretCoords(el: HTMLTextAreaElement, pos: number) {
-  const mirror = document.createElement("div")
-  const cs = getComputedStyle(el)
-  const rect = el.getBoundingClientRect()
-  Object.assign(mirror.style, {
-    position: "fixed", top: rect.top + "px", left: "-9999px",
-    visibility: "hidden", width: rect.width + "px",
-    padding: cs.padding, font: cs.font, lineHeight: cs.lineHeight,
-    whiteSpace: "pre-wrap", wordBreak: "break-word", boxSizing: cs.boxSizing,
-  })
-  mirror.textContent = el.value.slice(0, pos)
-  const span = document.createElement("span")
-  span.textContent = "​"
-  mirror.appendChild(span)
-  document.body.appendChild(mirror)
-  const spanTop = span.getBoundingClientRect().top
-  document.body.removeChild(mirror)
-  const lineH = parseFloat(cs.lineHeight) || 24
-  return { top: spanTop - el.scrollTop + lineH, left: rect.left + parseInt(cs.paddingLeft || "0") }
-}
-
-function useMentionUsers() {
-  const [users, setUsers] = useState<MentionUser[]>([])
-  const loaded = useRef(false)
-  const load = useCallback(async () => {
-    if (loaded.current) return
-    loaded.current = true
-    const res = await fetch("/api/users")
-    if (res.ok) setUsers(await res.json())
-  }, [])
-  return { users, load }
-}
-
-function MentionDropdown({
-  users, query, onSelect, caretCoords,
-}: { users: MentionUser[]; query: string; onSelect: (name: string) => void; caretCoords?: { top: number; left: number } | null }) {
-  const showTodos = "todos".includes(query.toLowerCase())
-  const filtered = users.filter((u) => u.name?.toLowerCase().includes(query.toLowerCase())).slice(0, 6)
-  const ref = useRef<HTMLDivElement>(null)
-  const flipUp = useFlipUp(ref)
-  if (!showTodos && !filtered.length) return null
-
-  const fixedStyle = caretCoords
-    ? { position: "fixed" as const, top: caretCoords.top, left: caretCoords.left }
-    : { ...(flipUp ? { bottom: "100%", marginBottom: 4 } : { top: "100%", marginTop: 4 }), left: 0 }
-
-  return (
-    <div
-      ref={ref}
-      className="absolute z-50 rounded-xl shadow-xl overflow-hidden"
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        ...fixedStyle,
-        minWidth: 200,
-      }}
-    >
-      {showTodos && (
-        <button
-          type="button"
-          onMouseDown={(e) => { e.preventDefault(); onSelect("todos") }}
-          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left hover:bg-[var(--surface-2)] transition-colors border-b"
-          style={{ borderColor: "var(--border)" }}
-        >
-          <span className="w-7 h-7 rounded-full flex items-center justify-center text-sm flex-shrink-0" style={{ background: "rgba(140,100,220,0.15)", color: "#a78bfa" }}>📢</span>
-          <div>
-            <div className="font-semibold" style={{ color: "#a78bfa" }}>@todos</div>
-            <div className="text-[11px]" style={{ color: "var(--muted)" }}>Notifica todos os membros</div>
-          </div>
-        </button>
-      )}
-      {filtered.map((u) => (
-        <button
-          key={u.id}
-          type="button"
-          onMouseDown={(e) => { e.preventDefault(); onSelect(u.name ?? "") }}
-          className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left hover:bg-[var(--surface-2)] transition-colors"
-        >
-          <Avatar name={u.name} image={u.image} size="sm" />
-          <span>{u.name}</span>
-        </button>
-      ))}
-    </div>
-  )
-}
-
-function useMentionAutocomplete(
-  ref: React.RefObject<HTMLTextAreaElement | HTMLInputElement | null>,
-  value: string,
-  setValue: (v: string) => void,
-  users: MentionUser[],
-  onFocusMentions: () => void,
-) {
-  const [mentionQuery, setMentionQuery] = useState<string | null>(null)
-  const [mentionStart, setMentionStart] = useState(0)
-  const [caretCoords, setCaretCoords] = useState<{ top: number; left: number } | null>(null)
-
-  function onKeyUp() {
-    const el = ref.current
-    if (!el) return
-    const cursor = el.selectionStart ?? 0
-    const before = el.value.slice(0, cursor)
-    const match = before.match(/@(\w[\w\s]*)$/)
-    const coords = el instanceof HTMLTextAreaElement ? getCaretCoords(el, cursor - (match ? match[0].length : 1)) : null
-    if (match) {
-      setMentionQuery(match[1])
-      setMentionStart(cursor - match[0].length)
-      setCaretCoords(coords)
-      onFocusMentions()
-    } else if (before.endsWith("@")) {
-      setMentionQuery("")
-      setMentionStart(cursor - 1)
-      setCaretCoords(coords)
-      onFocusMentions()
-    } else {
-      setMentionQuery(null)
-      setCaretCoords(null)
-    }
-  }
-
-  function selectMention(name: string) {
-    const el = ref.current
-    if (!el) return
-    const cursor = el.selectionStart ?? value.length
-    const before = value.slice(0, mentionStart)
-    const after = value.slice(cursor)
-    const newVal = `${before}@${name} ${after}`
-    setValue(newVal)
-    setMentionQuery(null)
-    setCaretCoords(null)
-    setTimeout(() => {
-      el.focus()
-      const pos = mentionStart + name.length + 2
-      el.setSelectionRange(pos, pos)
-    }, 0)
-  }
-
-  return { mentionQuery, selectMention, onKeyUp, caretCoords }
 }
 
 const EMOJI_CATEGORIES: { label: string; emojis: string[] }[] = [
@@ -432,7 +290,7 @@ function CommentRow({ comment, postId, currentUserId, mentionMap, onDelete, onEd
   const [saving, setSaving] = useState(false)
   const editRef = useRef<HTMLInputElement>(null)
   const { users: editUsers, load: loadEditUsers } = useMentionUsers()
-  const { mentionQuery, selectMention, onKeyUp, caretCoords } = useMentionAutocomplete(editRef, editText, setEditText, editUsers, loadEditUsers)
+  const mention = useMentionAutocomplete(editRef, editText, setEditText, editUsers, loadEditUsers)
   const isAuthor = comment.author.id === currentUserId
 
   async function handleSave() {
@@ -474,16 +332,15 @@ function CommentRow({ comment, postId, currentUserId, mentionMap, onDelete, onEd
                 onChange={setEditText}
                 autoFocus
                 onFocus={loadEditUsers}
-                onKeyUp={onKeyUp}
+                onKeyUp={mention.onKeyUp}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && mentionQuery === null) { e.preventDefault(); handleSave() }
+                  if (mention.onKeyDown(e)) return
+                  if (e.key === "Enter") { e.preventDefault(); handleSave() }
                   if (e.key === "Escape") { setEditing(false); setEditText(comment.content) }
                 }}
                 className="rounded-lg"
               />
-              {mentionQuery !== null && (
-                <MentionDropdown users={editUsers} query={mentionQuery} onSelect={selectMention} caretCoords={caretCoords} />
-              )}
+              <MentionDropdown mention={mention} />
             </div>
           ) : (
             <span className="text-sm leading-relaxed">{highlightMentions(comment.content, mentionMap)}</span>
@@ -535,12 +392,13 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
   const hasRecent = (post.recentComments?.length ?? 0) > 0
   const [showComments, setShowComments] = useState(hasRecent)
   const [comments, setComments] = useState<Comment[]>(post.recentComments ?? [])
-  const [commentsLoaded, setCommentsLoaded] = useState(hasRecent)
+  const [commentsLoaded, setCommentsLoaded] = useState(hasRecent && post._count.comments <= (post.recentComments?.length ?? 0))
+  const [loadingAll, setLoadingAll] = useState(false)
   const [commentText, setCommentText] = useState("")
   const [commentLoading, setCommentLoading] = useState(false)
   const commentRef = useRef<HTMLInputElement>(null)
   const { users: commentUsers, load: loadCommentUsers } = useMentionUsers()
-  const { mentionQuery: commentMentionQuery, selectMention: selectCommentMention, onKeyUp: commentOnKeyUp, caretCoords: commentCaretCoords } = useMentionAutocomplete(commentRef, commentText, setCommentText, commentUsers, loadCommentUsers)
+  const commentMention = useMentionAutocomplete(commentRef, commentText, setCommentText, commentUsers, loadCommentUsers)
   const [commentCount, setCommentCount] = useState(post._count.comments)
   const [deleting, setDeleting] = useState(false)
   const [imageIndex, setImageIndex] = useState(0)
@@ -562,7 +420,7 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
   const editRef = useRef<HTMLTextAreaElement>(null)
   const insertEditEmoji = useEmojiInsert(editRef, setEditContent)
   const { users: editUsers, load: loadEditUsers } = useMentionUsers()
-  const { mentionQuery: editMentionQuery, selectMention: selectEditMention, onKeyUp: editOnKeyUp, caretCoords: editCaretCoords } = useMentionAutocomplete(editRef, editContent, setEditContent, editUsers, loadEditUsers)
+  const editMention = useMentionAutocomplete(editRef, editContent, setEditContent, editUsers, loadEditUsers)
 
   const images = post.imageUrl ? post.imageUrl.split("|||") : []
   const isAuthor = post.author.id === currentUserId
@@ -573,14 +431,20 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
     await fetch(`/api/posts/${post.id}/like`, { method: "POST" })
   }
 
-  async function loadComments() {
-    if (!commentsLoaded) {
-      const res = await fetch(`/api/posts/${post.id}/comments`)
-      const data = await res.json()
-      setComments(data)
+  async function loadAllComments() {
+    setLoadingAll(true)
+    const res = await fetch(`/api/posts/${post.id}/comments`)
+    if (res.ok) {
+      setComments(await res.json())
       setCommentsLoaded(true)
     }
-    setShowComments((v) => !v)
+    setLoadingAll(false)
+  }
+
+  async function loadComments() {
+    if (showComments) { setShowComments(false); return }
+    setShowComments(true)
+    if (!commentsLoaded) await loadAllComments()
   }
 
   async function submitComment(e: React.FormEvent) {
@@ -665,14 +529,13 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
                 onFocus={loadEditUsers}
-                onKeyUp={editOnKeyUp}
+                onKeyUp={editMention.onKeyUp}
+                onKeyDown={(e) => { editMention.onKeyDown(e) }}
                 rows={4}
                 className="w-full rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:border-[var(--primary)] transition-colors"
                 style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
               />
-              {editMentionQuery !== null && (
-                <MentionDropdown users={editUsers} query={editMentionQuery} onSelect={selectEditMention} caretCoords={editCaretCoords} />
-              )}
+              <MentionDropdown mention={editMention} />
               {showEditEmoji && (
                 <EmojiPicker onSelect={insertEditEmoji} onClose={() => setShowEditEmoji(false)} />
               )}
@@ -833,6 +696,16 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
       {/* Comments */}
       {showComments && !editing && (
         <div className="border-t border-[var(--border)] px-4 py-3 space-y-3" style={{ background: "var(--surface-2)" }}>
+          {!commentsLoaded && commentCount > comments.length && (
+            <button
+              onClick={loadAllComments}
+              disabled={loadingAll}
+              className="text-xs font-medium hover:underline"
+              style={{ color: "var(--muted)" }}
+            >
+              {loadingAll ? "Carregando..." : `Ver todos os ${commentCount} comentários`}
+            </button>
+          )}
           {comments.map((c) => (
             <CommentRow
               key={c.id}
@@ -856,18 +729,17 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
                 value={commentText}
                 onChange={setCommentText}
                 onFocus={loadCommentUsers}
-                onKeyUp={commentOnKeyUp}
+                onKeyUp={commentMention.onKeyUp}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && commentMentionQuery === null) {
+                  if (commentMention.onKeyDown(e)) return
+                  if (e.key === "Enter") {
                     e.preventDefault()
                     submitComment(e as unknown as React.FormEvent)
                   }
                 }}
                 className="rounded-xl"
               />
-              {commentMentionQuery !== null && (
-                <MentionDropdown users={commentUsers} query={commentMentionQuery} onSelect={selectCommentMention} caretCoords={commentCaretCoords} />
-              )}
+              <MentionDropdown mention={commentMention} />
             </div>
             <Button type="submit" size="sm" loading={commentLoading} disabled={!commentText.trim()}>↑</Button>
           </form>
@@ -888,7 +760,7 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const insertEmoji = useEmojiInsert(textareaRef, setContent)
   const { users, load: loadUsers } = useMentionUsers()
-  const { mentionQuery, selectMention, onKeyUp, caretCoords } = useMentionAutocomplete(textareaRef, content, setContent, users, loadUsers)
+  const mention = useMentionAutocomplete(textareaRef, content, setContent, users, loadUsers)
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
@@ -936,7 +808,8 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
               value={content}
               onChange={(e) => setContent(e.target.value)}
               onFocus={() => { setExpanded(true); loadUsers() }}
-              onKeyUp={onKeyUp}
+              onKeyUp={mention.onKeyUp}
+              onKeyDown={(e) => { mention.onKeyDown(e) }}
               rows={expanded ? 3 : 1}
               className="w-full bg-transparent text-sm resize-none focus:outline-none leading-relaxed placeholder:text-[var(--muted)]"
               style={{ color: "transparent", caretColor: "var(--text)", fontSize: "16px" }}
@@ -949,9 +822,7 @@ function CreatePost({ currentUserName, currentUserImage, onPost }: { currentUser
             >
               {highlightMentions(content, {}, true)}
             </div>
-            {mentionQuery !== null && (
-              <MentionDropdown users={users} query={mentionQuery} onSelect={selectMention} caretCoords={caretCoords} />
-            )}
+            <MentionDropdown mention={mention} />
           </div>
 
           {previews.length > 0 && (

@@ -26,6 +26,7 @@ function IconBell() {
 function typeIcon(type: string) {
   if (type === "stars") return "★"
   if (type === "broadcast") return "📢"
+  if (type === "comment") return "💬"
   return "@"
 }
 

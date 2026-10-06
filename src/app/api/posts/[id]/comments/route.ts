@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { notifyMentions } from "@/lib/mentions"
+import { createNotification } from "@/lib/notifications"
 import { sendCommentNotificationEmail } from "@/lib/email"
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -37,13 +38,28 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   })
   const baseUrl = process.env.NEXTAUTH_URL ?? `https://${req.headers.get("host")}`
   const postUrl = `${baseUrl}/feed#post-${id}`
-  notifyMentions(comment.content, session.user.id, comment.author.name ?? "Alguém", "comment", id, baseUrl)
+  notifyMentions(comment.content, session.user.id, comment.author.name ?? "Alguém", "comment", id, baseUrl).catch(() => {})
 
   // Notify post author (skip if commenting on own post)
   const post = await db.post.findUnique({
     where: { id },
     select: { authorId: true, author: { select: { name: true, email: true } } },
   })
+  if (post && post.authorId !== session.user.id) {
+    const preview = comment.content.length > 200 ? comment.content.slice(0, 200) + "…" : comment.content
+    const lower = comment.content.toLowerCase()
+    const authorName = (post.author.name ?? "").toLowerCase()
+    const authorMentioned = lower.includes("@todos") || (authorName !== "" && lower.includes("@" + authorName))
+    if (!authorMentioned) {
+      await createNotification({
+        userId: post.authorId,
+        type: "comment",
+        title: `${comment.author.name ?? "Alguém"} comentou no seu post`,
+        body: preview,
+        url: postUrl,
+      }).catch(() => {})
+    }
+  }
   if (post && post.authorId !== session.user.id && post.author.email) {
     const preview = comment.content.length > 200 ? comment.content.slice(0, 200) + "…" : comment.content
     sendCommentNotificationEmail(post.author.email, post.author.name ?? "Alguém", comment.author.name ?? "Alguém", preview, postUrl).catch(() => {})

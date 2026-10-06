@@ -52,7 +52,7 @@ export default async function FeedPage() {
       likes: { include: { user: { select: { id: true, name: true, image: true } } } },
       _count: { select: { comments: true } },
       comments: {
-        orderBy: { createdAt: "asc" },
+        orderBy: { createdAt: "desc" },
         take: 3,
         include: {
           author: { select: { id: true, name: true, image: true } },
@@ -76,7 +76,7 @@ export default async function FeedPage() {
   const serialized = initialData.map(({ comments, ...p }) => ({
     ...p,
     createdAt: p.createdAt.toISOString(),
-    recentComments: comments.map((c) => ({ ...c, createdAt: c.createdAt.toISOString() })),
+    recentComments: [...comments].reverse().map((c) => ({ ...c, createdAt: c.createdAt.toISOString() })),
     mentionMap,
   }))
 

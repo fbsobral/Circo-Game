@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
       likes: { include: { user: { select: { id: true, name: true, image: true } } } },
       _count: { select: { comments: true } },
       comments: {
-        orderBy: { createdAt: "asc" },
+        orderBy: { createdAt: "desc" },
         take: 3,
         include: {
           author: { select: { id: true, name: true, image: true } },
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     : []
   const mentionMap = Object.fromEntries(mentionedUsers.map((u) => [u.name!.toLowerCase(), u.id]))
 
-  const posts = rawPosts.map(({ comments, ...p }) => ({ ...p, recentComments: comments, mentionMap }))
+  const posts = rawPosts.map(({ comments, ...p }) => ({ ...p, recentComments: [...comments].reverse(), mentionMap }))
   const nextCursor = posts.length === take ? posts[posts.length - 1].id : null
   return NextResponse.json({ posts, nextCursor })
 }

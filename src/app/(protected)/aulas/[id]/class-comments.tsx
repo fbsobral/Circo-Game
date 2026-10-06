@@ -65,7 +65,7 @@ function CommentRow({ comment, classId, currentUserId, mentionMap, onDelete, onE
   const [saving, setSaving] = useState(false)
   const editRef = useRef<HTMLInputElement>(null)
   const { users: editUsers, load: loadEditUsers } = useMentionUsers()
-  const { mentionQuery, selectMention, onKeyUp, caretCoords } = useMentionAutocomplete(editRef, editText, setEditText, loadEditUsers)
+  const mention = useMentionAutocomplete(editRef, editText, setEditText, editUsers, loadEditUsers)
 
   async function handleSave() {
     const text = editText.trim()
@@ -109,16 +109,15 @@ function CommentRow({ comment, classId, currentUserId, mentionMap, onDelete, onE
                 onChange={setEditText}
                 autoFocus
                 onFocus={loadEditUsers}
-                onKeyUp={onKeyUp}
+                onKeyUp={mention.onKeyUp}
                 onKeyDown={(e) => {
-                  if (e.key === "Enter" && mentionQuery === null) { e.preventDefault(); handleSave() }
+                  if (mention.onKeyDown(e)) return
+                  if (e.key === "Enter") { e.preventDefault(); handleSave() }
                   if (e.key === "Escape") { setEditing(false); setEditText(comment.content) }
                 }}
                 className="rounded-lg"
               />
-              {mentionQuery !== null && (
-                <MentionDropdown users={editUsers} query={mentionQuery} onSelect={selectMention} caretCoords={caretCoords} />
-              )}
+              <MentionDropdown mention={mention} />
             </div>
           ) : (
             <span className="text-sm leading-relaxed">{highlightMentions(comment.content, mentionMap)}</span>
@@ -171,7 +170,7 @@ export function ClassComments({ classId, currentUserId, initialComments, mention
   const [loading, setLoading] = useState(false)
   const ref = useRef<HTMLInputElement>(null)
   const { users, load: loadUsers } = useMentionUsers()
-  const { mentionQuery, selectMention, onKeyUp, caretCoords } = useMentionAutocomplete(ref, text, setText, loadUsers)
+  const mention = useMentionAutocomplete(ref, text, setText, users, loadUsers)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
@@ -221,18 +220,17 @@ export function ClassComments({ classId, currentUserId, initialComments, mention
               value={text}
               onChange={setText}
               onFocus={loadUsers}
-              onKeyUp={onKeyUp}
+              onKeyUp={mention.onKeyUp}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && mentionQuery === null) {
+                if (mention.onKeyDown(e)) return
+                if (e.key === "Enter") {
                   e.preventDefault()
                   submit(e as unknown as React.FormEvent)
                 }
               }}
               className="rounded-xl"
             />
-            {mentionQuery !== null && (
-              <MentionDropdown users={users} query={mentionQuery} onSelect={selectMention} caretCoords={caretCoords} />
-            )}
+            <MentionDropdown mention={mention} />
           </div>
           <Button type="submit" size="sm" loading={loading} disabled={!text.trim()}>↑</Button>
         </form>
