@@ -1,6 +1,5 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { Avatar } from "@/components/ui/avatar"
 import Link from "next/link"
 import { FeedClient } from "./feed-client"
 import { extractMentionNames } from "@/lib/mentions"
@@ -29,32 +28,26 @@ async function MiniRanking() {
   const medals = ["🥇", "🥈", "🥉"]
 
   return (
-    <Link href="/ranking" className="block group">
-      <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(201,168,76,0.2)" }}>
-        <div
-          className="px-4 py-2 flex items-center justify-between"
-          style={{ background: "rgba(201,168,76,0.06)", borderBottom: "1px solid rgba(201,168,76,0.12)" }}
+    <Link href="/ranking" className="block">
+      <div
+        className="rounded-xl flex items-center gap-4 px-3 py-2 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{ border: "1px solid rgba(201,168,76,0.2)", background: "rgba(201,168,76,0.06)" }}
+      >
+        <span
+          className="text-xs font-bold tracking-widest flex-shrink-0"
+          style={{ fontFamily: "var(--font-cormorant)", color: "var(--primary)", textTransform: "uppercase" }}
         >
-          <span
-            className="text-sm font-bold tracking-widest"
-            style={{ fontFamily: "var(--font-cormorant)", color: "var(--primary)", textTransform: "uppercase" }}
-          >
-            Ranking
+          Ranking
+        </span>
+        {ranked.map((u) => (
+          <span key={u.id} className="flex items-center gap-1.5 flex-shrink-0 text-sm">
+            <span>{medals[u.rank - 1] ?? u.rank}</span>
+            <span className="user-name font-medium">{u.name?.split(" ")[0]}</span>
+            <span className="font-bold" style={{ fontFamily: "var(--font-cormorant)", color: u.rank === 1 ? "var(--star-active)" : "var(--primary)" }}>
+              {u.score.toFixed(2)} ★
+            </span>
           </span>
-          <span className="text-xs text-[var(--muted)] group-hover:text-[var(--primary)] transition-colors">Ver tudo →</span>
-        </div>
-        <div className="divide-y divide-[var(--border)]" style={{ background: "var(--surface)" }}>
-          {ranked.map((u, i) => (
-            <div key={u.id} className="flex items-center gap-3 px-4 py-2.5">
-              <span className="text-base w-5 text-center flex-shrink-0">{medals[u.rank - 1] ?? u.rank}</span>
-              <Avatar name={u.name} image={u.image} size="sm" totalStars={u.totalStars} />
-              <span className="user-name text-sm font-medium flex-1 truncate">{u.name}</span>
-              <span className="text-sm font-bold flex-shrink-0" style={{ fontFamily: "var(--font-cormorant)", color: u.rank === 1 ? "var(--star-active)" : "var(--primary)" }}>
-                {u.score.toFixed(2)} ★
-              </span>
-            </div>
-          ))}
-        </div>
+        ))}
       </div>
     </Link>
   )
