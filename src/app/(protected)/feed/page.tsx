@@ -10,7 +10,6 @@ async function MiniRanking() {
   const users = await db.user.findMany({
     where: { role: { in: ["student", "admin"] } },
     include: { starRecords: { select: { stars: true, absent: true, diamond: true } } },
-    take: 50,
   })
 
   const ranked = rankWithTies(users
@@ -23,7 +22,7 @@ async function MiniRanking() {
       return { ...u, totalStars, score }
     })
     .filter((u) => u.totalStars > 0))
-    .slice(0, 3)
+    .filter((u) => u.rank <= 3)
 
   if (ranked.length < 1) return null
 
