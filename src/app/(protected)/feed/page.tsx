@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import Link from "next/link"
 import { FeedClient } from "./feed-client"
+import { MiniRankingRow } from "./mini-ranking-row"
 import { extractMentionNames } from "@/lib/mentions"
 import { rankWithTies } from "@/lib/ranking"
 
@@ -28,28 +28,15 @@ async function MiniRanking() {
   const medals = ["🥇", "🥈", "🥉"]
 
   return (
-    <Link href="/ranking" className="block">
-      <div
-        className="rounded-xl flex items-center gap-4 px-3 py-2 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        style={{ border: "1px solid rgba(201,168,76,0.2)", background: "rgba(201,168,76,0.06)" }}
-      >
-        <span
-          className="text-xs font-bold tracking-widest flex-shrink-0"
-          style={{ fontFamily: "var(--font-cormorant)", color: "var(--primary)", textTransform: "uppercase" }}
-        >
-          Ranking
-        </span>
-        {ranked.map((u) => (
-          <span key={u.id} className="flex items-center gap-1.5 flex-shrink-0 text-sm">
-            <span>{medals[u.rank - 1] ?? u.rank}</span>
-            <span className="user-name font-medium">{u.name?.split(" ")[0]}</span>
-            <span className="font-bold" style={{ fontFamily: "var(--font-cormorant)", color: u.rank === 1 ? "var(--star-active)" : "var(--primary)" }}>
-              {u.score.toFixed(2)} ★
-            </span>
-          </span>
-        ))}
-      </div>
-    </Link>
+    <MiniRankingRow
+      entries={ranked.map((u) => ({
+        id: u.id,
+        medal: medals[u.rank - 1] ?? String(u.rank),
+        name: u.name?.split(" ")[0] ?? "",
+        score: u.score.toFixed(2),
+        first: u.rank === 1,
+      }))}
+    />
   )
 }
 

@@ -112,3 +112,15 @@ input, textarea, select {
   background: var(--border-bright);
   border-radius: 2px;
 }
+
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+.marquee-viewport { overflow: hidden; }
+.marquee-track { animation: marquee linear infinite; }
+.marquee-track:hover,
+.marquee-track:active { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  .marquee-viewport { overflow-x: auto; scrollbar-width: none; }
+  .marquee-track { animation: none; }
+}
