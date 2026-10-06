@@ -81,7 +81,7 @@ export function RankingInfo() {
                 <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Faltas registradas</span><span className="font-medium">0</span></div>
                 <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Total de aulas esperadas</span><span className="font-medium">20</span></div>
                 <div className="flex justify-between gap-2 pt-2 mt-1 font-semibold border-t" style={{ borderColor: "rgba(201,168,76,0.2)" }}>
-                  <span>Pontuação (50 ÷ 20)</span><span style={{ color: "var(--primary)" }}>2,5 ★</span>
+                  <span>Pontuação (50 ÷ 20)</span><span style={{ color: "var(--primary)" }}>2,50 ★</span>
                 </div>
               </div>
 
@@ -93,7 +93,7 @@ export function RankingInfo() {
                 <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Faltas registradas</span><span className="font-medium" style={{ color: "#f87171" }}>3</span></div>
                 <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Total de aulas esperadas</span><span className="font-medium">20</span></div>
                 <div className="flex justify-between gap-2 pt-2 mt-1 font-semibold border-t" style={{ borderColor: "rgba(220,38,38,0.2)" }}>
-                  <span>Pontuação (20 ÷ 20)</span><span style={{ color: "#f87171" }}>1,0 ★</span>
+                  <span>Pontuação (20 ÷ 20)</span><span style={{ color: "#f87171" }}>1,00 ★</span>
                 </div>
               </div>
 
@@ -106,7 +106,7 @@ export function RankingInfo() {
                 <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Aulas presentes</span><span className="font-medium">10</span></div>
                 <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Total de aulas esperadas</span><span className="font-medium">10</span></div>
                 <div className="flex justify-between gap-2 pt-2 mt-1 font-semibold border-t" style={{ borderColor: "rgba(103,232,249,0.2)" }}>
-                  <span>Pontuação (31 ÷ 10)</span><span style={{ color: "#67e8f9" }}>3,1 ★</span>
+                  <span>Pontuação (31 ÷ 10)</span><span style={{ color: "#67e8f9" }}>3,10 ★</span>
                 </div>
               </div>
             </div>

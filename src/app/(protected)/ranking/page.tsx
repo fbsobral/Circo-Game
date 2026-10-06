@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { Avatar } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
+import { rankWithTies } from "@/lib/ranking"
 import { Suspense } from "react"
 import { RankingFilters } from "./ranking-filters"
 import { RankingInfo } from "./ranking-info"
@@ -31,7 +32,7 @@ export default async function RankingPage({
     },
   })
 
-  const ranked = users
+  const ranked = rankWithTies(users
     .map((u) => {
       const totalStars = u.starRecords.reduce((sum: number, r: { stars: number; absent: boolean; diamond: boolean }) => sum + (r.absent ? 0 : r.stars), 0)
       const totalDiamonds = u.starRecords.filter((r: { absent: boolean; diamond: boolean }) => !r.absent && r.diamond).length
@@ -41,8 +42,7 @@ export default async function RankingPage({
       const score = expectedClasses > 0 ? totalPoints / expectedClasses : 0
       return { ...u, totalStars, totalDiamonds, totalPoints, classCount, score, expectedClasses }
     })
-    .filter((u) => u.totalStars > 0 || !hasDateFilter)
-    .sort((a, b) => b.score - a.score)
+    .filter((u) => u.totalStars > 0 || !hasDateFilter))
 
   return (
     <div className="space-y-8">
@@ -78,6 +78,7 @@ export default async function RankingPage({
         style={{ border: "1px solid var(--border)", background: "var(--surface)" }}
       >
         {ranked.map((student, i) => {
+          const pos = student.rank - 1
           const isMe = student.id === session!.user.id
           const medals = ["🥇", "🥈", "🥉"]
 
@@ -95,11 +96,11 @@ export default async function RankingPage({
                 className="w-8 text-center flex-shrink-0 font-bold"
                 style={{
                   fontFamily: "var(--font-cormorant)",
-                  fontSize: i < 3 ? "1.2rem" : "0.9rem",
-                  color: i === 0 ? "#f0c040" : i === 1 ? "#c0c0c0" : i === 2 ? "#cd7f32" : "var(--muted)",
+                  fontSize: pos < 3 ? "1.2rem" : "0.9rem",
+                  color: pos === 0 ? "#f0c040" : pos === 1 ? "#c0c0c0" : pos === 2 ? "#cd7f32" : "var(--muted)",
                 }}
               >
-                {i < 3 ? medals[i] : `${i + 1}`}
+                {pos < 3 ? medals[pos] : `${student.rank}`}
               </span>
 
               <Avatar name={student.name} image={student.image} size="sm" totalStars={student.totalStars} />
@@ -124,10 +125,10 @@ export default async function RankingPage({
                   style={{
                     fontFamily: "var(--font-cormorant)",
                     fontSize: "1.3rem",
-                    color: i === 0 ? "var(--star-active)" : "var(--text)",
+                    color: pos === 0 ? "var(--star-active)" : "var(--text)",
                   }}
                 >
-                  {student.score.toFixed(1)}
+                  {student.score.toFixed(2)}
                 </span>
                 <span className="text-xs text-[var(--muted)]">★</span>
               </div>

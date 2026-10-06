@@ -4,6 +4,7 @@ import { Avatar } from "@/components/ui/avatar"
 import Link from "next/link"
 import { FeedClient } from "./feed-client"
 import { extractMentionNames } from "@/lib/mentions"
+import { rankWithTies } from "@/lib/ranking"
 
 async function MiniRanking() {
   const users = await db.user.findMany({
@@ -12,7 +13,7 @@ async function MiniRanking() {
     take: 50,
   })
 
-  const ranked = users
+  const ranked = rankWithTies(users
     .map((u) => {
       const totalStars = u.starRecords.reduce((s, r) => s + (r.absent ? 0 : r.stars), 0)
       const totalDiamonds = u.starRecords.filter((r) => !r.absent && r.diamond).length
@@ -21,8 +22,7 @@ async function MiniRanking() {
       const score = expectedClasses > 0 ? totalPoints / expectedClasses : 0
       return { ...u, totalStars, score }
     })
-    .filter((u) => u.totalStars > 0)
-    .sort((a, b) => b.score - a.score)
+    .filter((u) => u.totalStars > 0))
     .slice(0, 3)
 
   if (ranked.length < 1) return null
@@ -47,11 +47,11 @@ async function MiniRanking() {
         <div className="divide-y divide-[var(--border)]" style={{ background: "var(--surface)" }}>
           {ranked.map((u, i) => (
             <div key={u.id} className="flex items-center gap-3 px-4 py-2.5">
-              <span className="text-base w-5 text-center flex-shrink-0">{medals[i]}</span>
+              <span className="text-base w-5 text-center flex-shrink-0">{medals[u.rank - 1] ?? u.rank}</span>
               <Avatar name={u.name} image={u.image} size="sm" totalStars={u.totalStars} />
               <span className="user-name text-sm font-medium flex-1 truncate">{u.name}</span>
-              <span className="text-sm font-bold flex-shrink-0" style={{ fontFamily: "var(--font-cormorant)", color: i === 0 ? "var(--star-active)" : "var(--primary)" }}>
-                {u.score.toFixed(1)} ★
+              <span className="text-sm font-bold flex-shrink-0" style={{ fontFamily: "var(--font-cormorant)", color: u.rank === 1 ? "var(--star-active)" : "var(--primary)" }}>
+                {u.score.toFixed(2)} ★
               </span>
             </div>
           ))}

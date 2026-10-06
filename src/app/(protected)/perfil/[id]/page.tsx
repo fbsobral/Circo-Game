@@ -52,12 +52,12 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
     const expected = u.starRecords.filter((r) => r.absent || r.stars > 0).length
     return { id: u.id, score: expected > 0 ? (stars + diamonds) / expected : 0 }
   })
-  scores.sort((a, b) => b.score - a.score)
-
-  const rankPosition = scores.findIndex((s) => s.id === id) + 1
   const myScore = scores.find((s) => s.id === id)?.score ?? 0
+  const rankPosition = scores.some((s) => s.id === id) ? scores.filter((s) => s.score > myScore).length + 1 : 0
 
   const expectedClasses = user.starRecords.filter((r) => r.absent || r.stars > 0).length
+  const totalRecords = user.starRecords.length
+  const tiedWith = scores.filter((s) => s.id !== id && s.score === myScore).length
 
   const roleLabel = user.role === "admin" ? "Admin" : user.role === "professor" ? "Professor" : "Aluno"
 
@@ -117,7 +117,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
           <div className="grid grid-cols-4 gap-3 mt-5">
             <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
               <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-cormorant)", color: "var(--star-active)" }}>
-                {myScore.toFixed(1)} ★
+                {myScore.toFixed(2)} ★
               </div>
               <div className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>pontuação</div>
             </div>
@@ -126,10 +126,15 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
                 {rankPosition > 0 ? `#${rankPosition}` : "—"}
               </div>
               <div className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>no ranking</div>
+              {tiedWith > 0 && (
+                <div className="text-[10px] mt-0.5" style={{ color: "var(--primary)" }}>
+                  empatado com {tiedWith} {tiedWith === 1 ? "pessoa" : "pessoas"}
+                </div>
+              )}
             </div>
             <div className="rounded-xl p-3 text-center" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid var(--border)" }}>
               <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-cormorant)" }}>
-                {classCount}/{expectedClasses}
+                {classCount}/{totalRecords}
               </div>
               <div className="text-[10px] mt-0.5" style={{ color: "var(--muted)" }}>presenças</div>
             </div>

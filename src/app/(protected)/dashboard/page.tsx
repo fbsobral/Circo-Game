@@ -9,15 +9,12 @@ export default async function DashboardPage() {
   const session = await auth()
   const userId = session!.user.id
 
-  const [totalResult, rankingResult, recentRecords, classCount] = await Promise.all([
+  const [totalResult, allStudents, recentRecords, classCount] = await Promise.all([
     db.starRecord.aggregate({ where: { studentId: userId }, _sum: { stars: true } }),
-    db.$queryRaw<{ position: bigint }[]>`
-      SELECT position FROM (
-        SELECT "studentId", ROW_NUMBER() OVER (ORDER BY COALESCE(SUM(stars), 0) DESC) AS position
-        FROM "StarRecord"
-        GROUP BY "studentId"
-      ) r WHERE "studentId" = ${userId}
-    `,
+    db.user.findMany({
+      where: { role: { in: ["student", "admin"] } },
+      select: { id: true, starRecords: { select: { stars: true, absent: true, diamond: true } } },
+    }),
     db.starRecord.findMany({
       where: { studentId: userId },
       include: { class: true },
@@ -28,7 +25,14 @@ export default async function DashboardPage() {
   ])
 
   const totalStars = totalResult._sum.stars ?? 0
-  const position = rankingResult[0] ? Number(rankingResult[0].position) : null
+  const scores = allStudents.map((u) => {
+    const stars = u.starRecords.reduce((sum, r) => sum + (r.absent ? 0 : r.stars), 0)
+    const diamonds = u.starRecords.filter((r) => !r.absent && r.diamond).length
+    const expected = u.starRecords.filter((r) => r.absent || r.stars > 0).length
+    return { id: u.id, score: expected > 0 ? (stars + diamonds) / expected : 0 }
+  })
+  const mine = scores.find((s) => s.id === userId)
+  const position = mine ? scores.filter((s) => s.score > mine.score).length + 1 : null
 
   return (
     <div className="space-y-8">
