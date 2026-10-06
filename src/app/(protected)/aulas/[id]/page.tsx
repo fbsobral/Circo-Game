@@ -8,6 +8,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { DeleteClassButton } from "./delete-class-button"
 import { ClassComments } from "./class-comments"
+import { extractMentionNames } from "@/lib/mentions"
 
 export default async function AulaDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -41,6 +42,12 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
     ? (presentRecords.reduce((s: number, r: { stars: number }) => s + r.stars, 0) / presentRecords.length).toFixed(1)
     : null
   const absentCount = cls.starRecords.filter((r: { absent: boolean }) => r.absent).length
+
+  const mentionNames = [...new Set(cls.comments.flatMap((c) => extractMentionNames(c.content)))].filter((n) => n.toLowerCase() !== "todos")
+  const mentionedUsers = mentionNames.length
+    ? await db.user.findMany({ where: { name: { in: mentionNames, mode: "insensitive" } }, select: { id: true, name: true } })
+    : []
+  const mentionMap = Object.fromEntries(mentionedUsers.map((u) => [u.name!.toLowerCase(), u.id]))
 
   return (
     <div className="space-y-6">
@@ -91,9 +98,11 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
       <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)] divide-y divide-[var(--border)]">
         {cls.starRecords.map((r) => (
           <div key={r.id} className="flex items-center gap-4 px-5 py-3.5" style={r.absent ? { background: "rgba(220,38,38,0.04)" } : undefined}>
-            <Avatar name={r.student.name} image={r.student.image} size="sm" className={r.absent ? "opacity-40" : undefined} />
+            <Link href={`/perfil/${r.student.id}`} className="flex-shrink-0">
+              <Avatar name={r.student.name} image={r.student.image} size="sm" className={r.absent ? "opacity-40" : undefined} />
+            </Link>
             <div className="flex-1 min-w-0">
-              <div className={`text-sm font-medium${r.absent ? " opacity-40 line-through" : ""}`}>{r.student.name}</div>
+              <Link href={`/perfil/${r.student.id}`} className={`user-name text-sm font-medium hover:underline${r.absent ? " opacity-40 line-through" : ""}`}>{r.student.name}</Link>
               {!r.absent && r.note && <div className="text-xs text-[var(--muted)] italic mt-0.5">"{r.note}"</div>}
             </div>
             {r.absent ? (
@@ -121,6 +130,7 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
       </div>
       {/* Comments */}
       <ClassComments
+        mentionMap={mentionMap}
         classId={id}
         currentUserId={userId}
         initialComments={cls.comments.map((c) => ({ ...c, createdAt: c.createdAt.toISOString() }))}

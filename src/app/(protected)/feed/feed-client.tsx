@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react"
 import Link from "next/link"
 import { Avatar } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { highlightMentions, MentionInput } from "@/components/mention-autocomplete"
 
 interface Author { id: string; name: string | null; image: string | null }
 
@@ -91,20 +92,6 @@ function IconComment() {
 }
 
 interface MentionUser { id: string; name: string | null; image: string | null }
-
-function highlightMentions(text: string, mentionMap: Record<string, string> = {}, overlay = false) {
-  const parts = text.split(/(@todos|@\p{Lu}\S*(?:\s+\p{Lu}\S*)*)/gu)
-  return parts.map((part, i) => {
-    if (!part.startsWith("@")) return part
-    const isBroadcast = part.toLowerCase() === "@todos"
-    const color = isBroadcast ? "#a78bfa" : "var(--primary)"
-    const userId = !isBroadcast ? mentionMap[part.slice(1).toLowerCase()] : undefined
-    if (!overlay && userId) {
-      return <Link key={i} href={`/perfil/${userId}`} style={{ color, fontWeight: 600 }}>{part}</Link>
-    }
-    return <span key={i} style={{ color, fontWeight: 600 }}>{part}</span>
-  })
-}
 
 function getCaretCoords(el: HTMLTextAreaElement, pos: number) {
   const mirror = document.createElement("div")
@@ -481,20 +468,18 @@ function CommentRow({ comment, postId, currentUserId, mentionMap, onDelete, onEd
           <Link href={`/perfil/${comment.author.id}`} className="user-name text-xs font-semibold mr-2 hover:underline">{comment.author.name}</Link>
           {editing ? (
             <div className="relative mt-1">
-              <input
-                ref={editRef}
-                type="text"
+              <MentionInput
+                inputRef={editRef}
                 value={editText}
+                onChange={setEditText}
                 autoFocus
-                onChange={(e) => setEditText(e.target.value)}
                 onFocus={loadEditUsers}
                 onKeyUp={onKeyUp}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && mentionQuery === null) { e.preventDefault(); handleSave() }
                   if (e.key === "Escape") { setEditing(false); setEditText(comment.content) }
                 }}
-                className="w-full rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-[var(--primary)]"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
+                className="rounded-lg"
               />
               {mentionQuery !== null && (
                 <MentionDropdown users={editUsers} query={mentionQuery} onSelect={selectMention} caretCoords={caretCoords} />
@@ -865,12 +850,11 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
 
           <form onSubmit={submitComment} className="flex items-center gap-2 pt-1">
             <div className="relative flex-1">
-              <input
-                ref={commentRef as React.RefObject<HTMLInputElement>}
-                type="text"
+              <MentionInput
+                inputRef={commentRef}
                 placeholder="Escreva um comentário..."
                 value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
+                onChange={setCommentText}
                 onFocus={loadCommentUsers}
                 onKeyUp={commentOnKeyUp}
                 onKeyDown={(e) => {
@@ -879,8 +863,7 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
                     submitComment(e as unknown as React.FormEvent)
                   }
                 }}
-                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
-                style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
+                className="rounded-xl"
               />
               {commentMentionQuery !== null && (
                 <MentionDropdown users={commentUsers} query={commentMentionQuery} onSelect={selectCommentMention} caretCoords={commentCaretCoords} />

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, useEffect } from "react"
+import Link from "next/link"
 import { Avatar } from "@/components/ui/avatar"
 
 export interface MentionUser { id: string; name: string | null; image: string | null }
@@ -152,6 +153,67 @@ export function MentionDropdown({
           <span>{u.name}</span>
         </button>
       ))}
+    </div>
+  )
+}
+
+export function highlightMentions(text: string, mentionMap: Record<string, string> = {}, overlay = false) {
+  const parts = text.split(/(@todos|@\p{Lu}\S*(?:\s+\p{Lu}\S*)*)/gu)
+  return parts.map((part, i) => {
+    if (!part.startsWith("@")) return part
+    const isBroadcast = part.toLowerCase() === "@todos"
+    const color = isBroadcast ? "#a78bfa" : "var(--primary)"
+    const userId = !isBroadcast ? mentionMap[part.slice(1).toLowerCase()] : undefined
+    if (!overlay && userId) {
+      return <Link key={i} href={`/perfil/${userId}`} style={{ color, fontWeight: 600 }}>{part}</Link>
+    }
+    return <span key={i} style={{ color, fontWeight: 600 }}>{part}</span>
+  })
+}
+
+export function MentionInput({
+  inputRef, value, onChange, placeholder, autoFocus, onFocus, onKeyUp, onKeyDown, className = "",
+}: {
+  inputRef: React.RefObject<HTMLInputElement | null>
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  autoFocus?: boolean
+  onFocus?: () => void
+  onKeyUp?: () => void
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
+  className?: string
+}) {
+  const [scroll, setScroll] = useState(0)
+  const sync = () => setScroll(inputRef.current?.scrollLeft ?? 0)
+
+  return (
+    <div className="relative w-full">
+      <input
+        ref={inputRef}
+        type="text"
+        placeholder={placeholder}
+        value={value}
+        autoFocus={autoFocus}
+        onChange={(e) => { onChange(e.target.value); requestAnimationFrame(sync) }}
+        onFocus={onFocus}
+        onKeyUp={() => { onKeyUp?.(); sync() }}
+        onKeyDown={onKeyDown}
+        onSelect={sync}
+        onScroll={sync}
+        onMouseUp={sync}
+        className={`w-full border px-3 py-2 text-sm focus:outline-none focus:border-[var(--primary)] transition-colors placeholder:text-[var(--muted)] ${className}`}
+        style={{ background: "var(--surface)", borderColor: "var(--border)", color: "transparent", caretColor: "var(--text)", fontSize: "16px" }}
+      />
+      <div
+        className={`absolute inset-0 flex items-center overflow-hidden border border-transparent px-3 text-sm pointer-events-none select-none ${className}`}
+        style={{ fontSize: "16px", color: "var(--text)", background: "transparent" }}
+        aria-hidden
+      >
+        <span className="whitespace-pre" style={{ transform: `translateX(${-scroll}px)` }}>
+          {highlightMentions(value, {}, true)}
+        </span>
+      </div>
     </div>
   )
 }

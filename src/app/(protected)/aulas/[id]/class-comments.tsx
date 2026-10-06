@@ -4,7 +4,7 @@ import { useState, useRef } from "react"
 import Link from "next/link"
 import { Avatar } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { useMentionUsers, useMentionAutocomplete, MentionDropdown } from "@/components/mention-autocomplete"
+import { useMentionUsers, useMentionAutocomplete, MentionDropdown, MentionInput, highlightMentions } from "@/components/mention-autocomplete"
 
 interface Author { id: string; name: string | null; image: string | null }
 interface Comment {
@@ -56,8 +56,8 @@ function LikeButton({ commentId, classId, initialLikes, currentUserId }: {
   )
 }
 
-function CommentRow({ comment, classId, currentUserId, onDelete, onEdit }: {
-  comment: Comment; classId: string; currentUserId: string; onDelete: (id: string) => void; onEdit: (id: string, content: string) => void
+function CommentRow({ comment, classId, currentUserId, mentionMap, onDelete, onEdit }: {
+  comment: Comment; classId: string; currentUserId: string; mentionMap: Record<string, string>; onDelete: (id: string) => void; onEdit: (id: string, content: string) => void
 }) {
   const [deleting, setDeleting] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -103,27 +103,25 @@ function CommentRow({ comment, classId, currentUserId, onDelete, onEdit }: {
           </Link>
           {editing ? (
             <div className="relative mt-1">
-              <input
-                ref={editRef}
-                type="text"
+              <MentionInput
+                inputRef={editRef}
                 value={editText}
+                onChange={setEditText}
                 autoFocus
-                onChange={(e) => setEditText(e.target.value)}
                 onFocus={loadEditUsers}
                 onKeyUp={onKeyUp}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && mentionQuery === null) { e.preventDefault(); handleSave() }
                   if (e.key === "Escape") { setEditing(false); setEditText(comment.content) }
                 }}
-                className="w-full rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-[var(--primary)]"
-                style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
+                className="rounded-lg"
               />
               {mentionQuery !== null && (
                 <MentionDropdown users={editUsers} query={mentionQuery} onSelect={selectMention} caretCoords={caretCoords} />
               )}
             </div>
           ) : (
-            <span className="text-sm leading-relaxed">{comment.content}</span>
+            <span className="text-sm leading-relaxed">{highlightMentions(comment.content, mentionMap)}</span>
           )}
         </div>
         <div className="flex items-center gap-3 pl-3 mt-1">
@@ -164,9 +162,10 @@ interface Props {
   classId: string
   currentUserId: string
   initialComments: Comment[]
+  mentionMap?: Record<string, string>
 }
 
-export function ClassComments({ classId, currentUserId, initialComments }: Props) {
+export function ClassComments({ classId, currentUserId, initialComments, mentionMap = {} }: Props) {
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [text, setText] = useState("")
   const [loading, setLoading] = useState(false)
@@ -208,6 +207,7 @@ export function ClassComments({ classId, currentUserId, initialComments }: Props
             comment={c}
             classId={classId}
             currentUserId={currentUserId}
+            mentionMap={mentionMap}
             onDelete={(id) => setComments((prev) => prev.filter((x) => x.id !== id))}
             onEdit={(id, content) => setComments((prev) => prev.map((x) => (x.id === id ? { ...x, content } : x)))}
           />
@@ -215,12 +215,11 @@ export function ClassComments({ classId, currentUserId, initialComments }: Props
 
         <form onSubmit={submit} className="flex items-center gap-2 pt-1">
           <div className="relative flex-1">
-            <input
-              ref={ref}
-              type="text"
+            <MentionInput
+              inputRef={ref}
               placeholder="Escreva um comentário... (@nome para mencionar)"
               value={text}
-              onChange={(e) => setText(e.target.value)}
+              onChange={setText}
               onFocus={loadUsers}
               onKeyUp={onKeyUp}
               onKeyDown={(e) => {
@@ -229,8 +228,7 @@ export function ClassComments({ classId, currentUserId, initialComments }: Props
                   submit(e as unknown as React.FormEvent)
                 }
               }}
-              className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-[var(--primary)] transition-colors"
-              style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)", fontSize: "16px" }}
+              className="rounded-xl"
             />
             {mentionQuery !== null && (
               <MentionDropdown users={users} query={mentionQuery} onSelect={selectMention} caretCoords={caretCoords} />
