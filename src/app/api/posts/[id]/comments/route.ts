@@ -37,7 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     },
   })
   const baseUrl = process.env.NEXTAUTH_URL ?? `https://${req.headers.get("host")}`
-  const postUrl = `${baseUrl}/feed#post-${id}`
+  const postUrl = `${baseUrl}/post/${id}`
   notifyMentions(comment.content, session.user.id, comment.author.name ?? "Alguém", "comment", id, baseUrl).catch(() => {})
 
   // Notify post author (skip if commenting on own post)

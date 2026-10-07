@@ -7,6 +7,11 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
+function nextPath() {
+  const next = new URLSearchParams(window.location.search).get("next")
+  return next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/login") ? next : "/feed"
+}
+
 function LoginForm() {
   const router = useRouter()
   const params = useSearchParams()
@@ -33,7 +38,7 @@ function LoginForm() {
         setError(data.error ?? "E-mail ou senha incorretos")
         return
       }
-      window.location.href = data.mustChangePassword ? "/trocar-senha" : "/feed"
+      window.location.href = data.mustChangePassword ? "/trocar-senha" : nextPath()
     } catch {
       setLoading(false)
       setError("Erro de conexão. Tente novamente.")
@@ -53,7 +58,7 @@ function LoginForm() {
 
       {/* Google */}
       <button
-        onClick={() => signIn("google", { callbackUrl: "/feed" })}
+        onClick={() => signIn("google", { callbackUrl: nextPath() })}
         className="flex items-center justify-center gap-3 w-full rounded-xl px-4 py-3 text-sm font-medium transition-all duration-150 hover:opacity-90 mb-5"
         style={{
           background: "rgba(255,255,255,0.05)",

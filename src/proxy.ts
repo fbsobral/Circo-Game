@@ -8,7 +8,9 @@ export default auth((req) => {
   const isPublic = pathname === "/login" || pathname.startsWith("/api/auth") || pathname.startsWith("/api/reset-password") || pathname.startsWith("/reset-password") || pathname.startsWith("/forgot-password") || pathname === "/trocar-senha" || pathname === "/api/change-password" || pathname === "/api/sair" || pathname === "/api/auth/login"
 
   if (!session && !isPublic) {
-    return NextResponse.redirect(new URL("/login", req.url))
+    const loginUrl = new URL("/login", req.url)
+    if (pathname !== "/" && pathname !== "/feed") loginUrl.searchParams.set("next", pathname + req.nextUrl.search)
+    return NextResponse.redirect(loginUrl)
   }
 
   if (session && pathname === "/login") {

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { highlightMentions, MentionInput, MentionDropdown, useMentionUsers, useMentionAutocomplete } from "@/components/mention-autocomplete"
@@ -405,6 +406,24 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
   const [showLikers, setShowLikers] = useState(false)
   const [likers, setLikers] = useState<{ id: string; name: string | null; image: string | null }[] | null>(null)
 
+  const [linkCopied, setLinkCopied] = useState(false)
+
+  async function copyLink() {
+    const url = `${window.location.origin}/post/${post.id}`
+    try {
+      await navigator.clipboard.writeText(url)
+    } catch {
+      const input = document.createElement("textarea")
+      input.value = url
+      document.body.appendChild(input)
+      input.select()
+      document.execCommand("copy")
+      document.body.removeChild(input)
+    }
+    setLinkCopied(true)
+    setTimeout(() => setLinkCopied(false), 2000)
+  }
+
   async function openLikers() {
     setShowLikers(true)
     if (!likers) {
@@ -690,6 +709,18 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
             <IconComment />
             <span>{commentCount > 0 ? commentCount : ""}</span>
           </button>
+          <button
+            onClick={copyLink}
+            title="Copiar link do post"
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-all duration-150 hover:bg-[var(--surface-2)]"
+            style={{ color: linkCopied ? "var(--primary)" : "var(--muted)" }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+            <span>{linkCopied ? "Link copiado" : "Copiar link"}</span>
+          </button>
         </div>
       )}
 
@@ -883,10 +914,17 @@ interface FeedClientProps {
   currentUserId: string
   currentUserName: string
   currentUserImage: string | null
+  singlePost?: boolean
 }
 
-export function FeedClient({ initialPosts, nextCursor: initCursor, currentUserId, currentUserName, currentUserImage }: FeedClientProps) {
+export function FeedClient({ initialPosts, nextCursor: initCursor, currentUserId, currentUserName, currentUserImage, singlePost = false }: FeedClientProps) {
+  const router = useRouter()
   const [posts, setPosts] = useState<Post[]>(initialPosts)
+
+  useEffect(() => {
+    const match = window.location.hash.match(/^#post-(.+)$/)
+    if (match && !singlePost) router.replace(`/post/${match[1]}`)
+  }, [router, singlePost])
   const [cursor, setCursor] = useState<string | null>(initCursor)
   const [loadingMore, setLoadingMore] = useState(false)
 
@@ -895,6 +933,7 @@ export function FeedClient({ initialPosts, nextCursor: initCursor, currentUserId
   }
 
   function removePost(id: string) {
+    if (singlePost) { router.push("/feed"); return }
     setPosts((p) => p.filter((post) => post.id !== id))
   }
 
@@ -914,7 +953,7 @@ export function FeedClient({ initialPosts, nextCursor: initCursor, currentUserId
 
   return (
     <div className="space-y-3">
-      <CreatePost currentUserName={currentUserName} currentUserImage={currentUserImage} onPost={prependPost} />
+      {!singlePost && <CreatePost currentUserName={currentUserName} currentUserImage={currentUserImage} onPost={prependPost} />}
 
       {posts.length === 0 && (
         <div className="py-16 text-center">

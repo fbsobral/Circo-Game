@@ -46,7 +46,7 @@ export async function notifyMentions(
   const previous = previousContent ? resolveMentions(previousContent, users) : { ids: new Set<string>(), todos: false }
   if (previous.todos) return
 
-  const postUrl = overrideUrl ?? `${baseUrl}/feed#post-${postId}`
+  const postUrl = overrideUrl ?? `${baseUrl}/post/${postId}`
   const preview = content.length > 200 ? content.slice(0, 200) + "…" : content
   const contextLabel = context === "post" ? "publicação" : "comentário"
 
