@@ -3,6 +3,10 @@ import { db } from "@/lib/db"
 import { redirect } from "next/navigation"
 import { formatDate } from "@/lib/utils"
 import { AdminUsersClient } from "./admin-users-client"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = { title: "Administração" }
+
 
 export default async function AdminPage() {
   const session = await auth()

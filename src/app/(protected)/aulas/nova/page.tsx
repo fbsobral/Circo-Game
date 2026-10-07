@@ -1,5 +1,9 @@
 import { db } from "@/lib/db"
 import { NovaAulaForm } from "./nova-aula-form"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = { title: "Nova aula" }
+
 
 export default async function NovaAulaPage() {
   const users = await db.user.findMany({

@@ -4,6 +4,10 @@ import { FeedClient } from "./feed-client"
 import { MiniRankingRow } from "./mini-ranking-row"
 import { extractMentionNames } from "@/lib/mentions"
 import { rankWithTies } from "@/lib/ranking"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = { title: "Feed" }
+
 
 async function MiniRanking() {
   const users = await db.user.findMany({

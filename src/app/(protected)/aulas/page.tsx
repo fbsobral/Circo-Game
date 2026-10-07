@@ -3,6 +3,10 @@ import { db } from "@/lib/db"
 import { formatDateShort, formatDate } from "@/lib/utils"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = { title: "Aulas" }
+
 
 export default async function AulasPage() {
   const session = await auth()

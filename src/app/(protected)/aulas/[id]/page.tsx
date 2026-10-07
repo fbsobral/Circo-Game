@@ -9,6 +9,15 @@ import { Button } from "@/components/ui/button"
 import { DeleteClassButton } from "./delete-class-button"
 import { ClassComments } from "./class-comments"
 import { extractMentionNames } from "@/lib/mentions"
+import type { Metadata } from "next"
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const cls = await db.class.findUnique({ where: { id }, select: { title: true, date: true } })
+  if (!cls) return { title: "Aula não encontrada" }
+  return { title: `${cls.title || "Aula"} · ${formatDate(cls.date)}` }
+}
+
 
 export default async function AulaDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()

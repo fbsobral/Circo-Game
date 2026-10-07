@@ -4,6 +4,14 @@ import { notFound } from "next/navigation"
 import { Avatar } from "@/components/ui/avatar"
 import { StarsDisplay } from "@/components/stars"
 import { formatDate } from "@/lib/utils"
+import type { Metadata } from "next"
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const user = await db.user.findUnique({ where: { id }, select: { name: true } })
+  return { title: user?.name ?? "Perfil" }
+}
+
 
 export default async function PerfilPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()

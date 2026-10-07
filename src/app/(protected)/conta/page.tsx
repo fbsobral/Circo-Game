@@ -1,6 +1,10 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { ContaClient } from "./conta-client"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = { title: "Minha conta" }
+
 
 export default async function ContaPage() {
   const session = await auth()

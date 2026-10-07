@@ -4,6 +4,20 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { FeedClient } from "../../feed/feed-client"
 import { extractMentionNames } from "@/lib/mentions"
+import type { Metadata } from "next"
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const post = await db.post.findUnique({ where: { id }, select: { content: true, author: { select: { name: true } } } })
+  if (!post) return { title: "Post não encontrado" }
+  const text = post.content.replace(/\s+/g, " ").trim()
+  const short = text.length > 60 ? text.slice(0, 60).trimEnd() + "…" : text
+  return {
+    title: `${post.author.name ?? "Post"}: ${short}`,
+    description: text.length > 160 ? text.slice(0, 160).trimEnd() + "…" : text,
+  }
+}
+
 
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()

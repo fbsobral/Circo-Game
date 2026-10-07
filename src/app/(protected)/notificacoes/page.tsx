@@ -2,6 +2,10 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { formatDate } from "@/lib/utils"
 import Link from "next/link"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = { title: "Avisos" }
+
 
 function typeIcon(type: string) {
   if (type === "stars") return { icon: "★", bg: "rgba(201,168,76,0.15)", color: "var(--star-active)" }

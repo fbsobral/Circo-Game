@@ -2,6 +2,10 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { redirect } from "next/navigation"
 import { AdminUsersClient } from "../admin/admin-users-client"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = { title: "Usuários" }
+
 
 export default async function UsuariosPage() {
   const session = await auth()

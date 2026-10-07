@@ -7,6 +7,10 @@ import { Suspense } from "react"
 import { RankingFilters } from "./ranking-filters"
 import { RankingInfo } from "./ranking-info"
 import Link from "next/link"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = { title: "Ranking" }
+
 
 export default async function RankingPage({
   searchParams,

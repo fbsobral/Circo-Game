@@ -3,6 +3,14 @@ import { db } from "@/lib/db"
 import { notFound, redirect } from "next/navigation"
 import { formatDate } from "@/lib/utils"
 import { StarsForm } from "./stars-form"
+import type { Metadata } from "next"
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params
+  const cls = await db.class.findUnique({ where: { id }, select: { title: true, date: true } })
+  return { title: cls ? `Estrelas · ${cls.title || "Aula"} · ${formatDate(cls.date)}` : "Registrar estrelas" }
+}
+
 
 export default async function EsteralasPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
