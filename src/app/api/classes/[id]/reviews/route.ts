@@ -13,8 +13,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const userId = session.user.id
   const { stars, comment } = await req.json()
 
-  if (!Number.isInteger(stars) || stars < 1 || stars > 5) {
-    return NextResponse.json({ error: "Escolha de 1 a 5 estrelas" }, { status: 400 })
+  if (!Number.isInteger(stars) || stars < 1 || stars > 3) {
+    return NextResponse.json({ error: "Escolha de 1 a 3 estrelas" }, { status: 400 })
   }
   const text = typeof comment === "string" ? comment.trim() : ""
   if (text.length > 1000) return NextResponse.json({ error: "Comentário muito longo (máx. 1000)" }, { status: 400 })

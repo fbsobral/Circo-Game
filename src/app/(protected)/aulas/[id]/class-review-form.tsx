@@ -19,7 +19,7 @@ export function ClassReviewForm({ classId, initialStars, initialComment }: {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!stars) { setError("Escolha de 1 a 5 estrelas"); return }
+    if (!stars) { setError("Escolha de 1 a 3 estrelas"); return }
     setLoading(true)
     setError("")
     const res = await fetch(`/api/classes/${classId}/reviews`, {
@@ -53,7 +53,7 @@ export function ClassReviewForm({ classId, initialStars, initialComment }: {
       </div>
 
       <div className="flex items-center gap-1" onMouseLeave={() => setHover(0)}>
-        {[1, 2, 3, 4, 5].map((n) => (
+        {[1, 2, 3].map((n) => (
           <button
             key={n}
             type="button"
@@ -66,7 +66,7 @@ export function ClassReviewForm({ classId, initialStars, initialComment }: {
             ★
           </button>
         ))}
-        {stars > 0 && <span className="ml-2 text-sm text-[var(--muted)]">{stars} de 5</span>}
+        {stars > 0 && <span className="ml-2 text-sm text-[var(--muted)]">{stars} de 3</span>}
       </div>
 
       <textarea

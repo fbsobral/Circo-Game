@@ -185,8 +185,8 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <Link href={`/perfil/${r.student.id}`} className="user-name text-sm font-medium hover:underline truncate">{r.student.name}</Link>
-                      <span className="text-sm flex-shrink-0" style={{ color: "var(--star-active)" }} aria-label={`${r.stars} de 5`}>
-                        {"★".repeat(r.stars)}<span style={{ color: "var(--border-bright, #444466)" }}>{"★".repeat(5 - r.stars)}</span>
+                      <span className="text-sm flex-shrink-0" style={{ color: "var(--star-active)" }} aria-label={`${r.stars} de 3`}>
+                        {"★".repeat(r.stars)}<span style={{ color: "var(--border-bright, #444466)" }}>{"★".repeat(3 - r.stars)}</span>
                       </span>
                     </div>
                     {r.comment && <p className="text-sm mt-1 leading-relaxed whitespace-pre-wrap">{r.comment}</p>}

@@ -180,7 +180,7 @@ export async function sendClassReviewEmail(
   classUrl: string,
 ) {
   const filled = "★".repeat(stars)
-  const empty = "☆".repeat(5 - stars)
+  const empty = "☆".repeat(3 - stars)
   await getResend().emails.send({
     from,
     to: email,
@@ -192,7 +192,7 @@ export async function sendClassReviewEmail(
         <p><strong>${studentName}</strong> avaliou a aula <strong>${classTitle}</strong> (${classDate}):</p>
         <div style="background:#16162a;border-radius:12px;padding:24px;text-align:center;margin:24px 0;">
           <div style="color:#f0c040;font-size:32px;letter-spacing:4px;">${filled}<span style="color:#444466;">${empty}</span></div>
-          <div style="color:#c9a84c;font-size:14px;margin-top:4px;">${stars} de 5</div>
+          <div style="color:#c9a84c;font-size:14px;margin-top:4px;">${stars} de 3</div>
           ${comment ? `<p style="color:#d0d0e0;font-size:14px;margin-top:16px;font-style:italic;">"${comment}"</p>` : ""}
         </div>
         <a href="${classUrl}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 24px;">
