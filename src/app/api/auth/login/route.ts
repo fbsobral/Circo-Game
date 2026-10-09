@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Credenciais inválidas" }, { status: 400 })
   }
 
-  const user = await db.user.findUnique({ where: { email } })
+  const user = await db.user.findFirst({ where: { email: { equals: String(email).trim(), mode: "insensitive" } } })
   if (!user || !user.password) {
     return NextResponse.json({ error: "E-mail ou senha incorretos" }, { status: 401 })
   }

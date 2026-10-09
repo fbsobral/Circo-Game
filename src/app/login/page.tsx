@@ -77,7 +77,7 @@ function LoginForm() {
       </div>
 
       <form onSubmit={handleCredentials} className="flex flex-col gap-3">
-        <Input type="email" placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <Input type="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <Input type="password" placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} required />
 
         {(error || errorMsg) && (

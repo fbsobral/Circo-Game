@@ -65,7 +65,8 @@ export async function sendStarsNotificationEmail(
   classDate: string,
   stars: number,
   note?: string | null,
-  totalStars?: number,
+  standing?: { position: number; tied: number; total: number; score: number },
+  classUrl?: string,
 ) {
   const starEmoji = ["😴", "⭐", "⭐⭐", "⭐⭐⭐"][stars]
   const encouragement =
@@ -92,7 +93,20 @@ export async function sendStarsNotificationEmail(
           ${note ? `<p style="color:#8888aa;font-size:14px;margin-top:12px;font-style:italic;">"${note}"</p>` : ""}
         </div>
         <p style="color:#c9a84c;">${encouragement}</p>
-        ${totalStars !== undefined ? `<p style="color:#8888aa;font-size:13px;">Total acumulado: <strong style="color:#f0c040;">${totalStars} ★</strong></p>` : ""}
+        ${standing ? `
+        <div style="display:flex;gap:12px;margin:8px 0 16px;">
+          <div style="flex:1;background:#16162a;border-radius:12px;padding:16px;text-align:center;">
+            <div style="color:#8888aa;font-size:12px;">Posição no ranking</div>
+            <div style="color:#c9a84c;font-size:28px;font-weight:700;">${standing.position}º</div>
+            <div style="color:#8888aa;font-size:11px;">${standing.tied > 0 ? `empatado com ${standing.tied} ${standing.tied === 1 ? "pessoa" : "pessoas"}` : `de ${standing.total}`}</div>
+          </div>
+          <div style="flex:1;background:#16162a;border-radius:12px;padding:16px;text-align:center;">
+            <div style="color:#8888aa;font-size:12px;">Pontuação</div>
+            <div style="color:#f0c040;font-size:28px;font-weight:700;">${standing.score.toFixed(2)} ★</div>
+            <div style="color:#8888aa;font-size:11px;">média por aula</div>
+          </div>
+        </div>` : ""}
+        ${classUrl ? `<a href="${classUrl}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 8px;">Ver aula</a>` : ""}
       </div>
     `,
   })

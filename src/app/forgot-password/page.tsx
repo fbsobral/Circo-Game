@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
               <h2 className="text-xl font-semibold mb-2" style={{ fontFamily: "var(--font-cormorant)" }}>Esqueci minha senha</h2>
               <p className="text-sm text-[var(--muted)] mb-6 leading-relaxed">Informe seu e-mail e enviaremos um link para redefinir sua senha.</p>
               <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-                <Input type="email" placeholder="Seu e-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                <Input type="email" autoCapitalize="none" autoCorrect="off" spellCheck={false} placeholder="Seu e-mail" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 {error && <p className="text-sm text-[var(--danger)]">{error}</p>}
                 <Button type="submit" loading={loading} className="w-full">Enviar link</Button>
               </form>

@@ -6,7 +6,7 @@ export async function POST(req: NextRequest) {
   const { email } = await req.json()
   if (!email) return NextResponse.json({ error: "E-mail obrigatório" }, { status: 400 })
 
-  const user = await db.user.findUnique({ where: { email } })
+  const user = await db.user.findFirst({ where: { email: { equals: String(email).trim(), mode: "insensitive" } } })
   // always return ok to avoid email enumeration
   if (!user) return NextResponse.json({ ok: true })
 

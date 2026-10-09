@@ -4,6 +4,7 @@ import { db } from "@/lib/db"
 import { sendStarsNotificationEmail } from "@/lib/email"
 import { formatDateShort } from "@/lib/utils"
 import { createNotification } from "@/lib/notifications"
+import { getStandings } from "@/lib/standings"
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
@@ -37,40 +38,48 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     )
   )
 
-  // Send email only for present students with stars
-  Promise.all(
-    results.map(async (record) => {
-      if (record.absent || record.stars === 0) return
-      if (!record.student.email) return
-      const total = await db.starRecord.aggregate({
-        where: { studentId: record.studentId, absent: false },
-        _sum: { stars: true },
-      })
-      try {
-        const stars = record.stars
-        const classTitle = cls.title || "Aula"
-        const dateStr = formatDateShort(cls.date)
-        const totalStars = total._sum.stars ?? 0
-        await createNotification({
-          userId: record.studentId,
-          type: "stars",
-          title: `Você ganhou ${stars}${"★".repeat(stars)} em ${classTitle}`,
-          body: `${dateStr} · Total acumulado: ${totalStars}★${record.note ? ` · "${record.note}"` : ""}`,
-        })
-        await sendStarsNotificationEmail(
-          record.student.email,
-          record.student.name ?? "Aluno",
-          classTitle,
-          dateStr,
-          stars,
-          record.note,
-          totalStars,
-        )
-      } catch {
-        // log but don't fail
-      }
-    })
-  )
+  const baseUrl = process.env.NEXTAUTH_URL ?? `https://${req.headers.get("host")}`
+  const classUrl = `${baseUrl}/aulas/${classId}`
+
+  // Notify only present students with stars
+  getStandings()
+    .then((standings) =>
+      Promise.all(
+        results.map(async (record) => {
+          if (record.absent || record.stars === 0) return
+          const standing = standings.get(record.studentId)
+          try {
+            const stars = record.stars
+            const classTitle = cls.title || "Aula"
+            const dateStr = formatDateShort(cls.date)
+            const ranking = standing
+              ? ` · Ranking: ${standing.position}º${standing.tied > 0 ? " (empatado)" : ""} · Pontuação: ${standing.score.toFixed(2)}★`
+              : ""
+            await createNotification({
+              userId: record.studentId,
+              type: "stars",
+              title: `Você ganhou ${stars}${"★".repeat(stars)} em ${classTitle}`,
+              body: `${dateStr}${ranking}${record.note ? ` · "${record.note}"` : ""}`,
+              url: classUrl,
+            })
+            if (!record.student.email) return
+            await sendStarsNotificationEmail(
+              record.student.email,
+              record.student.name ?? "Aluno",
+              classTitle,
+              dateStr,
+              stars,
+              record.note,
+              standing,
+              classUrl,
+            )
+          } catch {
+            // log but don't fail
+          }
+        }),
+      ),
+    )
+    .catch(() => {})
 
   return NextResponse.json({ ok: true, count: results.length })
 }
