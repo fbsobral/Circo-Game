@@ -37,6 +37,7 @@ model User {
   postComments     PostComment[]
   postCommentLikes  PostCommentLike[]
   classComments     ClassComment[]
+  classReviews      ClassReview[]
   classCommentLikes ClassCommentLike[]
 }
 
@@ -98,6 +99,7 @@ model Class {
   createdBy   User           @relation(fields: [createdById], references: [id])
   starRecords StarRecord[]
   comments    ClassComment[]
+  reviews     ClassReview[]
 }
 
 model Notification {
@@ -206,4 +208,19 @@ model PostCommentLike {
 
   @@unique([commentId, userId])
   @@map("PostCommentLike")
+}
+
+model ClassReview {
+  id        String   @id @default(cuid())
+  classId   String
+  studentId String
+  stars     Int
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, studentId])
 }

@@ -11,6 +11,7 @@ function typeIcon(type: string) {
   if (type === "stars") return { icon: "★", bg: "rgba(201,168,76,0.15)", color: "var(--star-active)" }
   if (type === "broadcast") return { icon: "📢", bg: "rgba(140,100,220,0.15)", color: "#a78bfa" }
   if (type === "comment") return { icon: "💬", bg: "rgba(100,160,220,0.15)", color: "#60a5fa" }
+  if (type === "review") return { icon: "📝", bg: "rgba(201,168,76,0.15)", color: "var(--star-active)" }
   return { icon: "@", bg: "rgba(100,160,220,0.15)", color: "#60a5fa" }
 }
 

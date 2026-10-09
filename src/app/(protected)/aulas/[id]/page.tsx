@@ -8,6 +8,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { DeleteClassButton } from "./delete-class-button"
 import { ClassComments } from "./class-comments"
+import { ClassReviewForm } from "./class-review-form"
 import { extractMentionNames } from "@/lib/mentions"
 import type { Metadata } from "next"
 
@@ -51,6 +52,19 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
     ? (presentRecords.reduce((s: number, r: { stars: number }) => s + r.stars, 0) / presentRecords.length).toFixed(1)
     : null
   const absentCount = cls.starRecords.filter((r: { absent: boolean }) => r.absent).length
+
+  const myRecord = cls.starRecords.find((r) => r.student.id === userId && !r.absent)
+  const myReview = myRecord
+    ? await db.classReview.findUnique({ where: { classId_studentId: { classId: id, studentId: userId } } })
+    : null
+  const reviews = isProfessorOrAdmin
+    ? await db.classReview.findMany({
+        where: { classId: id },
+        orderBy: { createdAt: "desc" },
+        include: { student: { select: { id: true, name: true, image: true } } },
+      })
+    : []
+  const reviewAvg = reviews.length ? reviews.reduce((s, r) => s + r.stars, 0) / reviews.length : null
 
   const mentionNames = [...new Set(cls.comments.flatMap((c) => extractMentionNames(c.content)))].filter((n) => n.toLowerCase() !== "todos")
   const mentionedUsers = mentionNames.length
@@ -137,6 +151,54 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
           </div>
         )}
       </div>
+      {/* Student review (feedback to the teacher) */}
+      {myRecord && (
+        <ClassReviewForm classId={id} initialStars={myReview?.stars ?? 0} initialComment={myReview?.comment ?? ""} />
+      )}
+
+      {/* Teacher view of student reviews */}
+      {isProfessorOrAdmin && (
+        <div className="rounded-xl bg-[var(--surface)] border border-[var(--border)]">
+          <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--border)]">
+            <div>
+              <h2 className="font-semibold" style={{ fontFamily: "var(--font-cormorant)", fontSize: "1.25rem" }}>Avaliações dos alunos</h2>
+              <p className="text-xs text-[var(--muted)] mt-0.5">Feedback sobre a aula · não entra no ranking</p>
+            </div>
+            {reviewAvg !== null && (
+              <div className="text-right">
+                <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-cormorant)", color: "var(--star-active)" }}>
+                  {reviewAvg.toFixed(1)} ★
+                </div>
+                <div className="text-[11px] text-[var(--muted)]">{reviews.length} {reviews.length === 1 ? "avaliação" : "avaliações"}</div>
+              </div>
+            )}
+          </div>
+          {reviews.length === 0 ? (
+            <div className="py-8 text-center text-sm text-[var(--muted)]">Nenhuma avaliação ainda.</div>
+          ) : (
+            <div className="divide-y divide-[var(--border)]">
+              {reviews.map((r) => (
+                <div key={r.id} className="flex gap-3 px-5 py-3.5">
+                  <Link href={`/perfil/${r.student.id}`} className="flex-shrink-0">
+                    <Avatar name={r.student.name} image={r.student.image} size="sm" />
+                  </Link>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <Link href={`/perfil/${r.student.id}`} className="user-name text-sm font-medium hover:underline truncate">{r.student.name}</Link>
+                      <span className="text-sm flex-shrink-0" style={{ color: "var(--star-active)" }} aria-label={`${r.stars} de 5`}>
+                        {"★".repeat(r.stars)}<span style={{ color: "var(--border-bright, #444466)" }}>{"★".repeat(5 - r.stars)}</span>
+                      </span>
+                    </div>
+                    {r.comment && <p className="text-sm mt-1 leading-relaxed whitespace-pre-wrap">{r.comment}</p>}
+                    <div className="text-[11px] text-[var(--muted)] mt-1">{formatDate(r.updatedAt)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Comments */}
       <ClassComments
         mentionMap={mentionMap}

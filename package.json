@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "NODE_OPTIONS='--max-http-header-size=65536' next dev",
+    "dev": "NODE_OPTIONS='--max-http-header-size=65536' next dev -p 3001",
     "build": "next build",
     "start": "prisma migrate deploy && NODE_OPTIONS='--max-http-header-size=65536' next start",
     "lint": "eslint",
