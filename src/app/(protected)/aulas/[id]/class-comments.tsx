@@ -4,12 +4,14 @@ import { useState, useRef } from "react"
 import Link from "next/link"
 import { Avatar } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { CommentImageButton, CommentImagePreview, CommentPhoto } from "@/components/comment-image"
 import { useMentionUsers, useMentionAutocomplete, MentionDropdown, MentionInput, highlightMentions } from "@/components/mention-autocomplete"
 
 interface Author { id: string; name: string | null; image: string | null }
 interface Comment {
   id: string
   content: string
+  imageUrl?: string | null
   createdAt: string
   author: Author
   likes: { userId: string }[]
@@ -69,7 +71,7 @@ function CommentRow({ comment, classId, currentUserId, mentionMap, onDelete, onE
 
   async function handleSave() {
     const text = editText.trim()
-    if (!text || text === comment.content) { setEditing(false); setEditText(comment.content); return }
+    if ((!text && !comment.imageUrl) || text === comment.content) { setEditing(false); setEditText(comment.content); return }
     setSaving(true)
     const res = await fetch(`/api/classes/${classId}/comments/${comment.id}`, {
       method: "PATCH",
@@ -120,7 +122,10 @@ function CommentRow({ comment, classId, currentUserId, mentionMap, onDelete, onE
               <MentionDropdown mention={mention} />
             </div>
           ) : (
-            <span className="text-sm leading-relaxed">{highlightMentions(comment.content, mentionMap)}</span>
+            <>
+              {comment.content && <span className="text-sm leading-relaxed">{highlightMentions(comment.content, mentionMap)}</span>}
+              {comment.imageUrl && <div><CommentPhoto src={comment.imageUrl} /></div>}
+            </>
           )}
         </div>
         <div className="flex items-center gap-3 pl-3 mt-1">
@@ -168,22 +173,25 @@ export function ClassComments({ classId, currentUserId, initialComments, mention
   const [comments, setComments] = useState<Comment[]>(initialComments)
   const [text, setText] = useState("")
   const [loading, setLoading] = useState(false)
+  const [image, setImage] = useState<string | null>(null)
   const ref = useRef<HTMLInputElement>(null)
   const { users, load: loadUsers } = useMentionUsers()
   const mention = useMentionAutocomplete(ref, text, setText, users, loadUsers)
 
   async function submit(e: React.FormEvent) {
     e.preventDefault()
-    if (!text.trim()) return
+    if (!text.trim() && !image) return
     setLoading(true)
     const res = await fetch(`/api/classes/${classId}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: text.trim() }),
+      body: JSON.stringify({ content: text.trim(), imageUrl: image }),
     })
+    if (!res.ok) { setLoading(false); return }
     const newComment = await res.json()
     setComments((c) => [...c, newComment])
     setText("")
+    setImage(null)
     setLoading(false)
   }
 
@@ -212,7 +220,9 @@ export function ClassComments({ classId, currentUserId, initialComments, mention
           />
         ))}
 
-        <form onSubmit={submit} className="flex items-center gap-2 pt-1">
+        <form onSubmit={submit} className="space-y-2 pt-1">
+          {image && <CommentImagePreview src={image} onRemove={() => setImage(null)} />}
+          <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <MentionInput
               inputRef={ref}
@@ -232,7 +242,9 @@ export function ClassComments({ classId, currentUserId, initialComments, mention
             />
             <MentionDropdown mention={mention} />
           </div>
-          <Button type="submit" size="sm" loading={loading} disabled={!text.trim()}>↑</Button>
+          <CommentImageButton onPick={setImage} />
+          <Button type="submit" size="sm" loading={loading} disabled={!text.trim() && !image}>↑</Button>
+          </div>
         </form>
       </div>
     </div>

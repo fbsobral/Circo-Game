@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Avatar } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { compressImage, CommentImageButton, CommentImagePreview, CommentPhoto } from "@/components/comment-image"
 import { highlightMentions, MentionInput, MentionDropdown, useMentionUsers, useMentionAutocomplete } from "@/components/mention-autocomplete"
 
 interface Author { id: string; name: string | null; image: string | null }
@@ -12,6 +13,7 @@ interface Author { id: string; name: string | null; image: string | null }
 interface Comment {
   id: string
   content: string
+  imageUrl?: string | null
   createdAt: string
   author: Author
   likes: { userId: string }[]
@@ -234,27 +236,6 @@ function useEmojiInsert(ref: React.RefObject<HTMLTextAreaElement | null>, setVal
   }
 }
 
-async function compressImage(file: File, maxWidth = 1200, quality = 0.72): Promise<string> {
-  return new Promise((resolve) => {
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const img = new Image()
-      img.onload = () => {
-        let w = img.width
-        let h = img.height
-        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth }
-        const canvas = document.createElement("canvas")
-        canvas.width = w
-        canvas.height = h
-        canvas.getContext("2d")!.drawImage(img, 0, 0, w, h)
-        resolve(canvas.toDataURL("image/jpeg", quality))
-      }
-      img.src = e.target!.result as string
-    }
-    reader.readAsDataURL(file)
-  })
-}
-
 function CommentLikeButton({ commentId, initialLikes, currentUserId }: { commentId: string; initialLikes: { userId: string }[]; currentUserId: string }) {
   const [liked, setLiked] = useState(initialLikes.some((l) => l.userId === currentUserId))
   const [count, setCount] = useState(initialLikes.length)
@@ -296,7 +277,7 @@ function CommentRow({ comment, postId, currentUserId, mentionMap, onDelete, onEd
 
   async function handleSave() {
     const text = editText.trim()
-    if (!text || text === comment.content) { setEditing(false); setEditText(comment.content); return }
+    if ((!text && !comment.imageUrl) || text === comment.content) { setEditing(false); setEditText(comment.content); return }
     setSaving(true)
     const res = await fetch(`/api/posts/${postId}/comments/${comment.id}`, {
       method: "PATCH",
@@ -344,7 +325,10 @@ function CommentRow({ comment, postId, currentUserId, mentionMap, onDelete, onEd
               <MentionDropdown mention={mention} />
             </div>
           ) : (
-            <span className="text-sm leading-relaxed">{highlightMentions(comment.content, mentionMap)}</span>
+            <>
+              {comment.content && <span className="text-sm leading-relaxed">{highlightMentions(comment.content, mentionMap)}</span>}
+              {comment.imageUrl && <div><CommentPhoto src={comment.imageUrl} /></div>}
+            </>
           )}
         </div>
         <div className="flex items-center gap-3 pl-3 mt-1">
@@ -397,6 +381,7 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
   const [loadingAll, setLoadingAll] = useState(false)
   const [commentText, setCommentText] = useState("")
   const [commentLoading, setCommentLoading] = useState(false)
+  const [commentImage, setCommentImage] = useState<string | null>(null)
   const commentRef = useRef<HTMLInputElement>(null)
   const { users: commentUsers, load: loadCommentUsers } = useMentionUsers()
   const commentMention = useMentionAutocomplete(commentRef, commentText, setCommentText, commentUsers, loadCommentUsers)
@@ -468,16 +453,18 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
 
   async function submitComment(e: React.FormEvent) {
     e.preventDefault()
-    if (!commentText.trim()) return
+    if (!commentText.trim() && !commentImage) return
     setCommentLoading(true)
     const res = await fetch(`/api/posts/${post.id}/comments`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: commentText.trim() }),
+      body: JSON.stringify({ content: commentText.trim(), imageUrl: commentImage }),
     })
+    if (!res.ok) { setCommentLoading(false); return }
     const newComment = await res.json()
     setComments((c) => [...c, newComment])
     setCommentText("")
+    setCommentImage(null)
     setCommentCount((c) => c + 1)
     setCommentLoading(false)
   }
@@ -752,7 +739,9 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
             />
           ))}
 
-          <form onSubmit={submitComment} className="flex items-center gap-2 pt-1">
+          <form onSubmit={submitComment} className="space-y-2 pt-1">
+            {commentImage && <CommentImagePreview src={commentImage} onRemove={() => setCommentImage(null)} />}
+            <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <MentionInput
                 inputRef={commentRef}
@@ -772,7 +761,9 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
               />
               <MentionDropdown mention={commentMention} />
             </div>
-            <Button type="submit" size="sm" loading={commentLoading} disabled={!commentText.trim()}>↑</Button>
+            <CommentImageButton onPick={setCommentImage} />
+            <Button type="submit" size="sm" loading={commentLoading} disabled={!commentText.trim() && !commentImage}>↑</Button>
+            </div>
           </form>
         </div>
       )}

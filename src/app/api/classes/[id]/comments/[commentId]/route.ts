@@ -27,14 +27,14 @@ export async function PATCH(
   if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
 
   const { id, commentId } = await params
-  const comment = await db.classComment.findUnique({ where: { id: commentId }, select: { authorId: true, content: true } })
+  const comment = await db.classComment.findUnique({ where: { id: commentId }, select: { authorId: true, content: true, imageUrl: true } })
   if (!comment) return NextResponse.json({ error: "Comentário não encontrado" }, { status: 404 })
   if (comment.authorId !== session.user.id) return NextResponse.json({ error: "Sem permissão" }, { status: 403 })
 
   const { content } = await req.json()
-  if (!content?.trim()) return NextResponse.json({ error: "Conteúdo obrigatório" }, { status: 400 })
+  if (!content?.trim() && !comment.imageUrl) return NextResponse.json({ error: "Conteúdo obrigatório" }, { status: 400 })
 
-  const updated = await db.classComment.update({ where: { id: commentId }, data: { content: content.trim() } })
+  const updated = await db.classComment.update({ where: { id: commentId }, data: { content: (content ?? "").trim() } })
 
   const baseUrl = process.env.NEXTAUTH_URL ?? `https://${req.headers.get("host")}`
   notifyMentions(updated.content, session.user.id, session.user.name ?? "Alguém", "comment", id, baseUrl, `${baseUrl}/aulas/${id}`, comment.content)

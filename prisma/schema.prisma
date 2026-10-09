@@ -162,6 +162,7 @@ model PostComment {
   postId    String
   authorId  String
   content   String   @db.Text
+  imageUrl  String?  @db.Text
   createdAt DateTime @default(now())
 
   post   Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -176,6 +177,7 @@ model ClassComment {
   classId   String
   authorId  String
   content   String   @db.Text
+  imageUrl  String?  @db.Text
   createdAt DateTime @default(now())
 
   class  Class              @relation(fields: [classId], references: [id], onDelete: Cascade)
