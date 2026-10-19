@@ -4,13 +4,15 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 
-export function ClassReviewForm({ classId, initialStars, initialComment }: {
+export function ClassReviewForm({ classId, initialStars, initialDiamond, initialComment }: {
   classId: string
   initialStars: number
+  initialDiamond: boolean
   initialComment: string
 }) {
   const router = useRouter()
   const [stars, setStars] = useState(initialStars)
+  const [diamond, setDiamond] = useState(initialDiamond)
   const [hover, setHover] = useState(0)
   const [comment, setComment] = useState(initialComment)
   const [loading, setLoading] = useState(false)
@@ -25,7 +27,7 @@ export function ClassReviewForm({ classId, initialStars, initialComment }: {
     const res = await fetch(`/api/classes/${classId}/reviews`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ stars, comment }),
+      body: JSON.stringify({ stars, diamond, comment }),
     })
     setLoading(false)
     if (!res.ok) {
@@ -57,7 +59,7 @@ export function ClassReviewForm({ classId, initialStars, initialComment }: {
           <button
             key={n}
             type="button"
-            onClick={() => setStars(n)}
+            onClick={() => { setStars(n); if (n < 3) setDiamond(false) }}
             onMouseEnter={() => setHover(n)}
             aria-label={`${n} ${n === 1 ? "estrela" : "estrelas"}`}
             className="text-3xl leading-none transition-transform hover:scale-110"
@@ -66,7 +68,18 @@ export function ClassReviewForm({ classId, initialStars, initialComment }: {
             ★
           </button>
         ))}
-        {stars > 0 && <span className="ml-2 text-sm text-[var(--muted)]">{stars} de 3</span>}
+        <button
+          type="button"
+          onClick={() => { const next = !diamond; setDiamond(next); if (next) setStars(3) }}
+          title={diamond ? "Remover diamante" : "Dar um diamante (amei a aula!)"}
+          aria-label={diamond ? "Remover diamante" : "Dar um diamante"}
+          aria-pressed={diamond}
+          className="ml-2 text-2xl leading-none px-1 rounded-md transition-all"
+          style={diamond ? { opacity: 1, transform: "scale(1.1)", filter: "drop-shadow(0 0 6px #67e8f9)" } : { opacity: 0.3 }}
+        >
+          💎
+        </button>
+        {stars > 0 && <span className="ml-1 text-sm text-[var(--muted)]">{stars} de 3</span>}
       </div>
 
       <textarea

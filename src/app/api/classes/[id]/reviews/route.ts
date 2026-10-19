@@ -11,7 +11,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id: classId } = await params
   const userId = session.user.id
-  const { stars, comment } = await req.json()
+  const body = await req.json()
+  const diamond = body.diamond === true
+  const stars = diamond ? 3 : body.stars
+  const comment = body.comment
 
   if (!Number.isInteger(stars) || stars < 1 || stars > 3) {
     return NextResponse.json({ error: "Escolha de 1 a 3 estrelas" }, { status: 400 })
@@ -35,8 +38,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const review = await db.classReview.upsert({
     where: { classId_studentId: { classId, studentId: userId } },
-    create: { classId, studentId: userId, stars, comment: text || null },
-    update: { stars, comment: text || null },
+    create: { classId, studentId: userId, stars, diamond, comment: text || null },
+    update: { stars, diamond, comment: text || null },
   })
 
   if (!existing && cls.createdBy.id !== userId) {
@@ -49,7 +52,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     createNotification({
       userId: cls.createdBy.id,
       type: "review",
-      title: `${studentName} avaliou a aula ${classTitle} com ${stars}★`,
+      title: `${studentName} avaliou a aula ${classTitle} com ${stars}★${diamond ? " 💎" : ""}`,
       body: preview || "Sem comentário",
       url: classUrl,
     }).catch(() => {})
@@ -62,11 +65,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         classTitle,
         formatDateShort(cls.date),
         stars,
+        diamond,
         text || null,
         classUrl,
       ).catch(() => {})
     }
   }
 
-  return NextResponse.json({ ok: true, stars: review.stars, comment: review.comment, created: !existing })
+  return NextResponse.json({ ok: true, stars: review.stars, diamond: review.diamond, comment: review.comment, created: !existing })
 }

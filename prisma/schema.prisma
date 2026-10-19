@@ -215,6 +215,7 @@ model ClassReview {
   classId   String
   studentId String
   stars     Int
+  diamond   Boolean  @default(false)
   comment   String?  @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

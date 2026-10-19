@@ -65,6 +65,7 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
       })
     : []
   const reviewAvg = reviews.length ? reviews.reduce((s, r) => s + r.stars, 0) / reviews.length : null
+  const reviewDiamonds = reviews.filter((r) => r.diamond).length
 
   const mentionNames = [...new Set(cls.comments.flatMap((c) => extractMentionNames(c.content)))].filter((n) => n.toLowerCase() !== "todos")
   const mentionedUsers = mentionNames.length
@@ -153,7 +154,7 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
       </div>
       {/* Student review (feedback to the teacher) */}
       {myRecord && (
-        <ClassReviewForm classId={id} initialStars={myReview?.stars ?? 0} initialComment={myReview?.comment ?? ""} />
+        <ClassReviewForm classId={id} initialStars={myReview?.stars ?? 0} initialDiamond={myReview?.diamond ?? false} initialComment={myReview?.comment ?? ""} />
       )}
 
       {/* Teacher view of student reviews */}
@@ -169,7 +170,7 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
                 <div className="text-2xl font-bold" style={{ fontFamily: "var(--font-cormorant)", color: "var(--star-active)" }}>
                   {reviewAvg.toFixed(1)} ★
                 </div>
-                <div className="text-[11px] text-[var(--muted)]">{reviews.length} {reviews.length === 1 ? "avaliação" : "avaliações"}</div>
+                <div className="text-[11px] text-[var(--muted)]">{reviews.length} {reviews.length === 1 ? "avaliação" : "avaliações"}{reviewDiamonds > 0 && ` · ${reviewDiamonds} 💎`}</div>
               </div>
             )}
           </div>
@@ -187,6 +188,7 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
                       <Link href={`/perfil/${r.student.id}`} className="user-name text-sm font-medium hover:underline truncate">{r.student.name}</Link>
                       <span className="text-sm flex-shrink-0" style={{ color: "var(--star-active)" }} aria-label={`${r.stars} de 3`}>
                         {"★".repeat(r.stars)}<span style={{ color: "var(--border-bright, #444466)" }}>{"★".repeat(3 - r.stars)}</span>
+                        {r.diamond && <span className="ml-1.5" title="Diamante" style={{ filter: "drop-shadow(0 0 4px #67e8f9)" }}>💎</span>}
                       </span>
                     </div>
                     {r.comment && <p className="text-sm mt-1 leading-relaxed whitespace-pre-wrap">{r.comment}</p>}

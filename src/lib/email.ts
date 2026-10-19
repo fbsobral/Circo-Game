@@ -176,6 +176,7 @@ export async function sendClassReviewEmail(
   classTitle: string,
   classDate: string,
   stars: number,
+  diamond: boolean,
   comment: string | null,
   classUrl: string,
 ) {
@@ -193,10 +194,40 @@ export async function sendClassReviewEmail(
         <div style="background:#16162a;border-radius:12px;padding:24px;text-align:center;margin:24px 0;">
           <div style="color:#f0c040;font-size:32px;letter-spacing:4px;">${filled}<span style="color:#444466;">${empty}</span></div>
           <div style="color:#c9a84c;font-size:14px;margin-top:4px;">${stars} de 3</div>
+          ${diamond ? `<div style="color:#67e8f9;font-size:14px;margin-top:8px;">💎 Diamante: o aluno amou a aula!</div>` : ""}
           ${comment ? `<p style="color:#d0d0e0;font-size:14px;margin-top:16px;font-style:italic;">"${comment}"</p>` : ""}
         </div>
         <a href="${classUrl}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 24px;">
           Ver avaliações da aula
+        </a>
+        <p style="color:#8888aa;font-size:12px;margin-top:32px;">Circo Game — Plataforma de gamificação para turmas de circo.</p>
+      </div>
+    `,
+  })
+}
+
+export async function sendThreadCommentEmail(
+  email: string,
+  recipientName: string,
+  commenterName: string,
+  description: string,
+  commentPreview: string,
+  url: string,
+) {
+  await getResend().emails.send({
+    from,
+    to: email,
+    subject: `${commenterName} fez um novo comentário — Circo Game`,
+    html: `
+      <div style="background:#0d0d14;color:#f0eeee;font-family:sans-serif;padding:40px;max-width:500px;margin:0 auto;border-radius:12px;">
+        ${emailLogo}
+        <p>Olá, <strong>${recipientName}</strong>!</p>
+        <p><strong>${commenterName}</strong> fez um novo comentário em ${description} que você acompanha:</p>
+        <div style="background:#16162a;border-radius:12px;padding:20px;margin:24px 0;border-left:3px solid #c9a84c;">
+          <p style="margin:0;font-size:14px;color:#d0d0e0;font-style:italic;">"${commentPreview}"</p>
+        </div>
+        <a href="${url}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 24px;">
+          Ver conversa
         </a>
         <p style="color:#8888aa;font-size:12px;margin-top:32px;">Circo Game — Plataforma de gamificação para turmas de circo.</p>
       </div>

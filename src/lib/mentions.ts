@@ -1,5 +1,5 @@
 import { db } from "./db"
-import { sendMentionEmail } from "./email"
+import { sendMentionEmail, sendThreadCommentEmail } from "./email"
 import { createNotification, createBroadcastNotifications } from "./notifications"
 
 export function extractMentionNames(content: string): string[] {
@@ -82,5 +82,68 @@ export async function notifyMentions(
       })
       await sendMentionEmail(u.email, u.name ?? "Aluno", authorName, context, postUrl, preview)
     })
+  )
+}
+
+export async function notifyThread({
+  kind,
+  threadId,
+  commentId,
+  commentAuthorId,
+  commentAuthorName,
+  commentContent,
+  alreadyNotifiedIds = [],
+  title,
+  description,
+  url,
+}: {
+  kind: "post" | "class"
+  threadId: string
+  commentId: string
+  commentAuthorId: string
+  commentAuthorName: string
+  commentContent: string
+  alreadyNotifiedIds?: string[]
+  title: string
+  description: string
+  url: string
+}) {
+  const users = await db.user.findMany({ select: { id: true, name: true, email: true } })
+  const current = resolveMentions(commentContent, users)
+  if (current.todos) return
+
+  const participants = new Set<string>()
+  const collect = (authorId: string, text: string) => {
+    participants.add(authorId)
+    for (const id of resolveMentions(text, users).ids) participants.add(id)
+  }
+
+  if (kind === "post") {
+    const post = await db.post.findUnique({ where: { id: threadId }, select: { content: true } })
+    if (post) for (const id of resolveMentions(post.content, users).ids) participants.add(id)
+    const comments = await db.postComment.findMany({
+      where: { postId: threadId, id: { not: commentId } },
+      select: { authorId: true, content: true },
+    })
+    for (const c of comments) collect(c.authorId, c.content)
+  } else {
+    const comments = await db.classComment.findMany({
+      where: { classId: threadId, id: { not: commentId } },
+      select: { authorId: true, content: true },
+    })
+    for (const c of comments) collect(c.authorId, c.content)
+  }
+
+  const skip = new Set([commentAuthorId, ...alreadyNotifiedIds, ...current.ids])
+  const recipients = users.filter((u) => participants.has(u.id) && !skip.has(u.id))
+  if (!recipients.length) return
+
+  const preview = !commentContent ? "📷 Foto" : commentContent.length > 200 ? commentContent.slice(0, 200) + "…" : commentContent
+
+  await Promise.allSettled(
+    recipients.map(async (u) => {
+      await createNotification({ userId: u.id, type: "comment", title, body: preview, url })
+      await sendThreadCommentEmail(u.email, u.name ?? "Aluno", commentAuthorName, description, preview, url)
+    }),
   )
 }

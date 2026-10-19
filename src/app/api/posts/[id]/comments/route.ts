@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
-import { notifyMentions } from "@/lib/mentions"
+import { notifyMentions, notifyThread } from "@/lib/mentions"
 import { createNotification } from "@/lib/notifications"
 import { sendCommentNotificationEmail } from "@/lib/email"
 
@@ -67,6 +67,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const preview = !comment.content ? "📷 Foto" : comment.content.length > 200 ? comment.content.slice(0, 200) + "…" : comment.content
     sendCommentNotificationEmail(post.author.email, post.author.name ?? "Alguém", comment.author.name ?? "Alguém", preview, postUrl).catch(() => {})
   }
+
+  const commenterName = comment.author.name ?? "Alguém"
+  notifyThread({
+    kind: "post",
+    threadId: id,
+    commentId: comment.id,
+    commentAuthorId: session.user.id,
+    commentAuthorName: commenterName,
+    commentContent: comment.content,
+    alreadyNotifiedIds: post ? [post.authorId] : [],
+    title: `${commenterName} comentou numa publicação que você acompanha`,
+    description: post?.author.name ? `o post de ${post.author.name}` : "uma publicação",
+    url: postUrl,
+  }).catch(() => {})
 
   return NextResponse.json({ ...comment, createdAt: comment.createdAt.toISOString() }, { status: 201 })
 }
