@@ -5,7 +5,7 @@ export default auth((req) => {
   const { pathname } = req.nextUrl
   const session = req.auth
 
-  const isPublic = pathname === "/login" || pathname.startsWith("/api/auth") || pathname.startsWith("/api/reset-password") || pathname.startsWith("/reset-password") || pathname.startsWith("/forgot-password") || pathname === "/trocar-senha" || pathname === "/api/change-password" || pathname === "/api/sair" || pathname === "/api/auth/login"
+  const isPublic = pathname === "/login" || pathname.startsWith("/api/auth") || pathname.startsWith("/api/reset-password") || pathname.startsWith("/reset-password") || pathname.startsWith("/forgot-password") || pathname === "/trocar-senha" || pathname === "/api/change-password" || pathname === "/api/sair" || pathname === "/api/auth/login" || pathname === "/apple-icon" || pathname === "/icon" || pathname === "/opengraph-image"
 
   if (!session && !isPublic) {
     const loginUrl = new URL("/login", req.url)

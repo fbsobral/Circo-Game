@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Cormorant_Garamond, Inter } from "next/font/google"
 import { Providers } from "@/components/providers"
 import "./globals.css"
@@ -17,8 +17,11 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: { default: "Circo | Game", template: "%s | Circo Game" },
   description: "Gamificação para turmas de circo",
-  icons: { icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎪</text></svg>" },
+  other: { "apple-mobile-web-app-title": "Circo Game" },
+  icons: { icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎪</text></svg>", apple: [{ url: "/apple-icon", sizes: "180x180", type: "image/png" }] },
 }
+
+export const viewport: Viewport = { themeColor: "#080810" }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
