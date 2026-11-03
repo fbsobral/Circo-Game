@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
+import { isSafeImageList } from "@/lib/security"
+import { rateLimit, tooManyRequests } from "@/lib/rate-limit"
 import { db } from "@/lib/db"
 import { notifyMentions, extractMentionNames } from "@/lib/mentions"
 
@@ -51,6 +53,9 @@ export async function POST(req: NextRequest) {
   const { content, imageUrl } = await req.json()
   if (!content?.trim()) return NextResponse.json({ error: "Conteúdo obrigatório" }, { status: 400 })
   if (content.length > 2000) return NextResponse.json({ error: "Máximo 2000 caracteres" }, { status: 400 })
+  if (imageUrl && !isSafeImageList(imageUrl)) return NextResponse.json({ error: "Imagem inválida ou grande demais" }, { status: 400 })
+  const limit = rateLimit(`post:${session.user.id}`, 20, 60_000)
+  if (!limit.ok) return tooManyRequests(limit.retryAfter)
 
   const post = await db.post.create({
     data: {

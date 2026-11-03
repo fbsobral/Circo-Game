@@ -5,7 +5,7 @@ export default auth((req) => {
   const { pathname } = req.nextUrl
   const session = req.auth
 
-  const isPublic = pathname === "/login" || pathname.startsWith("/api/auth") || pathname.startsWith("/api/reset-password") || pathname.startsWith("/reset-password") || pathname.startsWith("/forgot-password") || pathname === "/trocar-senha" || pathname === "/api/change-password" || pathname === "/api/sair" || pathname === "/api/auth/login" || pathname === "/apple-icon" || pathname === "/icon" || pathname === "/opengraph-image"
+  const isPublic = pathname === "/login" || pathname.startsWith("/api/auth") || pathname === "/api/forgot-password" || pathname.startsWith("/api/reset-password") || pathname.startsWith("/reset-password") || pathname.startsWith("/forgot-password") || pathname === "/trocar-senha" || pathname === "/api/change-password" || pathname === "/api/sair" || pathname === "/api/auth/login" || pathname === "/apple-icon" || pathname === "/icon" || pathname === "/opengraph-image"
 
   if (!session && !isPublic) {
     const loginUrl = new URL("/login", req.url)
@@ -26,8 +26,10 @@ export default auth((req) => {
   const isAdmin = role === "admin"
 
   const mustChangePassword = (session?.user as { mustChangePassword?: boolean })?.mustChangePassword
-  if (session && mustChangePassword && pathname !== "/trocar-senha" && !pathname.startsWith("/api/")) {
-    return NextResponse.redirect(new URL("/trocar-senha", req.url))
+  if (session && mustChangePassword && pathname !== "/trocar-senha") {
+    if (!pathname.startsWith("/api/")) return NextResponse.redirect(new URL("/trocar-senha", req.url))
+    const allowed = pathname === "/api/change-password" || pathname === "/api/sair" || pathname.startsWith("/api/auth/")
+    if (!allowed) return NextResponse.json({ error: "Troque a senha provisória antes de continuar" }, { status: 403 })
   }
 
   if (pathname.startsWith("/admin") && !isAdmin) {

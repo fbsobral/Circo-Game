@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
+import { isSafeImage } from "@/lib/security"
+import { rateLimit, tooManyRequests } from "@/lib/rate-limit"
 import { db } from "@/lib/db"
 import { notifyMentions, notifyThread } from "@/lib/mentions"
 import { createNotification } from "@/lib/notifications"
@@ -28,9 +30,14 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const { id } = await params
   const { content, imageUrl } = await req.json()
   if (!content?.trim() && !imageUrl) return NextResponse.json({ error: "Conteúdo obrigatório" }, { status: 400 })
-  if (imageUrl != null && (typeof imageUrl !== "string" || !imageUrl.startsWith("data:image/") || imageUrl.length > 3_000_000)) {
+  if (content && (typeof content !== "string" || content.length > 2000)) {
+    return NextResponse.json({ error: "Máximo 2000 caracteres" }, { status: 400 })
+  }
+  if (imageUrl != null && !isSafeImage(imageUrl)) {
     return NextResponse.json({ error: "Imagem inválida ou grande demais" }, { status: 400 })
   }
+  const limit = rateLimit(`comment:${session.user.id}`, 30, 60_000)
+  if (!limit.ok) return tooManyRequests(limit.retryAfter)
 
   const comment = await db.postComment.create({
     data: { postId: id, authorId: session.user.id, content: (content ?? "").trim(), imageUrl: imageUrl ?? null },

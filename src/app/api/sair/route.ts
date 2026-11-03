@@ -1,8 +1,12 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
+import { db } from "@/lib/db"
 
-// Clears NextAuth v5 session cookies and redirects to /login.
+// Clears NextAuth v5 session cookies (and the session row) and redirects to /login.
 // Useful when large cookies prevent accessing the normal logout button.
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const token = req.cookies.get("__Secure-authjs.session-token")?.value ?? req.cookies.get("authjs.session-token")?.value
+  if (token) await db.session.deleteMany({ where: { sessionToken: token } }).catch(() => {})
+
   const base = process.env.NEXTAUTH_URL ?? "https://circo.felipesobral.com"
   const res = NextResponse.redirect(new URL("/login", base))
   const s = "Path=/; Max-Age=0; HttpOnly; SameSite=Lax; Secure"

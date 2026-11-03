@@ -32,6 +32,7 @@ export async function PATCH(
   if (comment.authorId !== session.user.id) return NextResponse.json({ error: "Sem permissão" }, { status: 403 })
 
   const { content } = await req.json()
+  if (typeof content === "string" && content.length > 2000) return NextResponse.json({ error: "Máximo 2000 caracteres" }, { status: 400 })
   if (!content?.trim() && !comment.imageUrl) return NextResponse.json({ error: "Conteúdo obrigatório" }, { status: 400 })
 
   const updated = await db.postComment.update({ where: { id: commentId }, data: { content: (content ?? "").trim() } })

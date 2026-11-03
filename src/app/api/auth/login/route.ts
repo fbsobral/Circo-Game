@@ -2,22 +2,30 @@ import { NextRequest, NextResponse } from "next/server"
 import bcrypt from "bcryptjs"
 import { db } from "@/lib/db"
 import { randomUUID } from "crypto"
+import { clientIp, rateLimit, tooManyRequests } from "@/lib/rate-limit"
+import { normalizeEmail } from "@/lib/security"
 
 // Custom credentials login that bypasses NextAuth's broken credentials+database-session flow.
 // Creates the Session record directly, then sets the cookie NextAuth expects.
+// Compared against when the e-mail is unknown, so response time does not reveal which accounts exist.
+const DUMMY_HASH = bcrypt.hashSync(randomUUID(), 12)
+
 export async function POST(req: NextRequest) {
-  const { email, password } = await req.json()
-  if (!email || !password) {
+  const body = await req.json().catch(() => ({}))
+  const email = normalizeEmail(body.email)
+  const password = body.password
+  if (!email || typeof password !== "string" || !password || password.length > 128) {
     return NextResponse.json({ error: "Credenciais inválidas" }, { status: 400 })
   }
 
-  const user = await db.user.findFirst({ where: { email: { equals: String(email).trim(), mode: "insensitive" } } })
-  if (!user || !user.password) {
-    return NextResponse.json({ error: "E-mail ou senha incorretos" }, { status: 401 })
-  }
+  const ip = clientIp(req)
+  const byIp = rateLimit(`login-ip:${ip}`, 40, 15 * 60_000)
+  const byAccount = rateLimit(`login:${ip}:${email}`, 8, 15 * 60_000)
+  if (!byIp.ok || !byAccount.ok) return tooManyRequests(Math.max(byIp.retryAfter, byAccount.retryAfter))
 
-  const valid = await bcrypt.compare(password, user.password)
-  if (!valid) {
+  const user = await db.user.findFirst({ where: { email: { equals: email, mode: "insensitive" } } })
+  const valid = await bcrypt.compare(password, user?.password ?? DUMMY_HASH)
+  if (!user || !user.password || !valid) {
     return NextResponse.json({ error: "E-mail ou senha incorretos" }, { status: 401 })
   }
 

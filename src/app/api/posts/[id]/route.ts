@@ -14,6 +14,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { content } = await req.json()
   if (!content?.trim()) return NextResponse.json({ error: "Conteúdo obrigatório" }, { status: 400 })
+  if (content.length > 2000) return NextResponse.json({ error: "Máximo 2000 caracteres" }, { status: 400 })
 
   const updated = await db.post.update({ where: { id }, data: { content: content.trim() } })
 

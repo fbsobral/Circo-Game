@@ -17,7 +17,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "Você não criou esta aula" }, { status: 403 })
   }
 
-  const { title, date, notes } = await req.json()
+  const { title, date, notes } = await req.json().catch(() => ({}))
+  if ((typeof title === "string" && title.length > 150) || (typeof notes === "string" && notes.length > 2000)) {
+    return NextResponse.json({ error: "Título (até 150) ou observação (até 2000) muito longos" }, { status: 400 })
+  }
+  if (date && Number.isNaN(new Date(date).getTime())) {
+    return NextResponse.json({ error: "Data inválida" }, { status: 400 })
+  }
   const updated = await db.class.update({
     where: { id },
     data: {

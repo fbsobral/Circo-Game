@@ -1,4 +1,5 @@
 import { Resend } from "resend"
+import { escapeHtml } from "./security"
 
 function getResend() {
   return new Resend(process.env.RESEND_API_KEY ?? "placeholder")
@@ -20,17 +21,17 @@ export async function sendWelcomeEmail(email: string, name: string, loginUrl: st
     html: `
       <div style="background:#0d0d14;color:#f0eeee;font-family:sans-serif;padding:40px;max-width:500px;margin:0 auto;border-radius:12px;">
         ${emailLogo}
-        <p>Olá, <strong>${name}</strong>!</p>
+        <p>Olá, <strong>${escapeHtml(name)}</strong>!</p>
         <p>Você acaba de ser cadastrado na plataforma <strong>Circo Game</strong>. Acompanhe seu progresso, veja suas estrelas e suba no ranking!</p>
         ${tempPassword ? `
         <div style="background:#16162a;border-radius:12px;padding:20px;margin:24px 0;border-left:3px solid #c9a84c;">
           <p style="margin:0 0 8px;font-size:13px;color:#8888aa;">Seus dados de acesso:</p>
-          <p style="margin:0 0 4px;font-size:14px;">E-mail: <strong>${email}</strong></p>
-          <p style="margin:0;font-size:14px;">Senha provisória: <strong style="color:#c9a84c;font-size:18px;letter-spacing:2px;">${tempPassword}</strong></p>
+          <p style="margin:0 0 4px;font-size:14px;">E-mail: <strong>${escapeHtml(email)}</strong></p>
+          <p style="margin:0;font-size:14px;">Senha provisória: <strong style="color:#c9a84c;font-size:18px;letter-spacing:2px;">${escapeHtml(tempPassword)}</strong></p>
           <p style="margin:8px 0 0;font-size:12px;color:#8888aa;">Você será solicitado a criar uma nova senha no primeiro acesso.</p>
         </div>
         ` : ""}
-        <a href="${loginUrl}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 24px;">
+        <a href="${escapeHtml(loginUrl)}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 24px;">
           Acessar minha conta
         </a>
         <p style="color:#8888aa;font-size:12px;margin-top:32px;">Se você não esperava este e-mail, pode ignorá-lo.</p>
@@ -47,9 +48,9 @@ export async function sendPasswordResetEmail(email: string, name: string, resetU
     html: `
       <div style="background:#0d0d14;color:#f0eeee;font-family:sans-serif;padding:40px;max-width:500px;margin:0 auto;border-radius:12px;">
         ${emailLogo}
-        <p>Olá, <strong>${name}</strong>!</p>
+        <p>Olá, <strong>${escapeHtml(name)}</strong>!</p>
         <p>Recebemos uma solicitação para redefinir sua senha. Clique no botão abaixo para criar uma nova:</p>
-        <a href="${resetUrl}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:24px 0;">
+        <a href="${escapeHtml(resetUrl)}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:24px 0;">
           Redefinir senha
         </a>
         <p style="color:#8888aa;font-size:12px;">Este link expira em 1 hora. Se você não solicitou a recuperação, ignore este e-mail.</p>
@@ -85,12 +86,12 @@ export async function sendStarsNotificationEmail(
     html: `
       <div style="background:#0d0d14;color:#f0eeee;font-family:sans-serif;padding:40px;max-width:500px;margin:0 auto;border-radius:12px;">
         ${emailLogo}
-        <p>Olá, <strong>${studentName}</strong>!</p>
-        <p>O professor registrou sua avaliação da aula <strong>${classTitle || classDate}</strong>:</p>
+        <p>Olá, <strong>${escapeHtml(studentName)}</strong>!</p>
+        <p>O professor registrou sua avaliação da aula <strong>${escapeHtml(classTitle || classDate)}</strong>:</p>
         <div style="background:#16162a;border-radius:12px;padding:24px;text-align:center;margin:24px 0;">
           <div style="font-size:48px;margin-bottom:8px;">${starEmoji || "—"}</div>
           <div style="color:#c9a84c;font-size:32px;font-weight:700;">${stars} ${stars === 1 ? "estrela" : "estrelas"}</div>
-          ${note ? `<p style="color:#8888aa;font-size:14px;margin-top:12px;font-style:italic;">"${note}"</p>` : ""}
+          ${note ? `<p style="color:#8888aa;font-size:14px;margin-top:12px;font-style:italic;">"${escapeHtml(note)}"</p>` : ""}
         </div>
         <p style="color:#c9a84c;">${encouragement}</p>
         ${standing ? `
@@ -106,7 +107,7 @@ export async function sendStarsNotificationEmail(
             <div style="color:#8888aa;font-size:11px;">média por aula</div>
           </div>
         </div>` : ""}
-        ${classUrl ? `<a href="${classUrl}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 8px;">Ver aula</a>` : ""}
+        ${classUrl ? `<a href="${escapeHtml(classUrl)}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 8px;">Ver aula</a>` : ""}
       </div>
     `,
   })
@@ -126,12 +127,12 @@ export async function sendCommentNotificationEmail(
     html: `
       <div style="background:#0d0d14;color:#f0eeee;font-family:sans-serif;padding:40px;max-width:500px;margin:0 auto;border-radius:12px;">
         ${emailLogo}
-        <p>Olá, <strong>${postAuthorName}</strong>!</p>
-        <p><strong>${commenterName}</strong> comentou no seu post:</p>
+        <p>Olá, <strong>${escapeHtml(postAuthorName)}</strong>!</p>
+        <p><strong>${escapeHtml(commenterName)}</strong> comentou no seu post:</p>
         <div style="background:#16162a;border-radius:12px;padding:20px;margin:24px 0;border-left:3px solid #c9a84c;">
-          <p style="margin:0;font-size:14px;color:#d0d0e0;font-style:italic;">"${commentPreview}"</p>
+          <p style="margin:0;font-size:14px;color:#d0d0e0;font-style:italic;">"${escapeHtml(commentPreview)}"</p>
         </div>
-        <a href="${postUrl}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 24px;">
+        <a href="${escapeHtml(postUrl)}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 24px;">
           Ver no feed
         </a>
         <p style="color:#8888aa;font-size:12px;margin-top:32px;">Circo Game — Plataforma de gamificação para turmas de circo.</p>
@@ -155,12 +156,12 @@ export async function sendMentionEmail(
     html: `
       <div style="background:#0d0d14;color:#f0eeee;font-family:sans-serif;padding:40px;max-width:500px;margin:0 auto;border-radius:12px;">
         ${emailLogo}
-        <p>Olá, <strong>${mentionedName}</strong>!</p>
-        <p><strong>${authorName}</strong> marcou você em um ${context === "post" ? "post" : "comentário"} no feed:</p>
+        <p>Olá, <strong>${escapeHtml(mentionedName)}</strong>!</p>
+        <p><strong>${escapeHtml(authorName)}</strong> marcou você em um ${context === "post" ? "post" : "comentário"} no feed:</p>
         <div style="background:#16162a;border-radius:12px;padding:20px;margin:24px 0;border-left:3px solid #c9a84c;">
-          <p style="margin:0;font-size:14px;color:#d0d0e0;font-style:italic;">"${preview}"</p>
+          <p style="margin:0;font-size:14px;color:#d0d0e0;font-style:italic;">"${escapeHtml(preview)}"</p>
         </div>
-        <a href="${postUrl}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 24px;">
+        <a href="${escapeHtml(postUrl)}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 24px;">
           Ver no feed
         </a>
         <p style="color:#8888aa;font-size:12px;margin-top:32px;">Circo Game — Plataforma de gamificação para turmas de circo.</p>
@@ -189,15 +190,15 @@ export async function sendClassReviewEmail(
     html: `
       <div style="background:#0d0d14;color:#f0eeee;font-family:sans-serif;padding:40px;max-width:500px;margin:0 auto;border-radius:12px;">
         ${emailLogo}
-        <p>Olá, <strong>${teacherName}</strong>!</p>
-        <p><strong>${studentName}</strong> avaliou a aula <strong>${classTitle}</strong> (${classDate}):</p>
+        <p>Olá, <strong>${escapeHtml(teacherName)}</strong>!</p>
+        <p><strong>${escapeHtml(studentName)}</strong> avaliou a aula <strong>${escapeHtml(classTitle)}</strong> (${escapeHtml(classDate)}):</p>
         <div style="background:#16162a;border-radius:12px;padding:24px;text-align:center;margin:24px 0;">
           <div style="color:#f0c040;font-size:32px;letter-spacing:4px;">${filled}<span style="color:#444466;">${empty}</span></div>
           <div style="color:#c9a84c;font-size:14px;margin-top:4px;">${stars} de 3</div>
           ${diamond ? `<div style="color:#67e8f9;font-size:14px;margin-top:8px;">💎 Diamante: o aluno amou a aula!</div>` : ""}
-          ${comment ? `<p style="color:#d0d0e0;font-size:14px;margin-top:16px;font-style:italic;">"${comment}"</p>` : ""}
+          ${comment ? `<p style="color:#d0d0e0;font-size:14px;margin-top:16px;font-style:italic;">"${escapeHtml(comment)}"</p>` : ""}
         </div>
-        <a href="${classUrl}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 24px;">
+        <a href="${escapeHtml(classUrl)}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 24px;">
           Ver avaliações da aula
         </a>
         <p style="color:#8888aa;font-size:12px;margin-top:32px;">Circo Game — Plataforma de gamificação para turmas de circo.</p>
@@ -221,12 +222,12 @@ export async function sendThreadCommentEmail(
     html: `
       <div style="background:#0d0d14;color:#f0eeee;font-family:sans-serif;padding:40px;max-width:500px;margin:0 auto;border-radius:12px;">
         ${emailLogo}
-        <p>Olá, <strong>${recipientName}</strong>!</p>
-        <p><strong>${commenterName}</strong> fez um novo comentário em ${description} que você acompanha:</p>
+        <p>Olá, <strong>${escapeHtml(recipientName)}</strong>!</p>
+        <p><strong>${escapeHtml(commenterName)}</strong> fez um novo comentário em ${escapeHtml(description)} que você acompanha:</p>
         <div style="background:#16162a;border-radius:12px;padding:20px;margin:24px 0;border-left:3px solid #c9a84c;">
-          <p style="margin:0;font-size:14px;color:#d0d0e0;font-style:italic;">"${commentPreview}"</p>
+          <p style="margin:0;font-size:14px;color:#d0d0e0;font-style:italic;">"${escapeHtml(commentPreview)}"</p>
         </div>
-        <a href="${url}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 24px;">
+        <a href="${escapeHtml(url)}" style="display:inline-block;background:#c9a84c;color:#0d0d14;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;margin:8px 0 24px;">
           Ver conversa
         </a>
         <p style="color:#8888aa;font-size:12px;margin-top:32px;">Circo Game — Plataforma de gamificação para turmas de circo.</p>

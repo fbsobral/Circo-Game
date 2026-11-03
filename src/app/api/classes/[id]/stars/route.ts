@@ -18,6 +18,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     records: { studentId: string; stars: number; note?: string; absent?: boolean; diamond?: boolean }[]
   }
 
+  if (!Array.isArray(records) || records.length > 500 || records.some((r) =>
+    typeof r?.studentId !== "string" || !Number.isInteger(r.stars) || r.stars < 0 || r.stars > 3 ||
+    (r.note != null && (typeof r.note !== "string" || r.note.length > 500)))) {
+    return NextResponse.json({ error: "Registros inválidos" }, { status: 400 })
+  }
+
   const cls = await db.class.findUnique({ where: { id: classId } })
   if (!cls) return NextResponse.json({ error: "Aula não encontrada" }, { status: 404 })
 
