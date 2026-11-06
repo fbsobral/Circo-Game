@@ -573,8 +573,8 @@ function PostCard({ post, currentUserId, onDelete, onEdit }: {
             <img
               src={images[imageIndex]}
               alt=""
-              className="w-full rounded-xl object-cover max-h-96"
-              style={{ border: "1px solid var(--border)" }}
+              className="w-full rounded-xl object-contain max-h-[70vh]"
+              style={{ border: "1px solid var(--border)", background: "rgba(0,0,0,0.35)" }}
             />
             {images.length > 1 && (
               <div className="absolute bottom-2 right-2 flex gap-1">
