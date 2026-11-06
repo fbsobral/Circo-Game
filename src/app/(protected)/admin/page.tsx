@@ -3,6 +3,8 @@ import { db } from "@/lib/db"
 import { redirect } from "next/navigation"
 import { formatDate } from "@/lib/utils"
 import { AdminUsersClient } from "./admin-users-client"
+import { AdminSeasonsClient } from "./admin-seasons-client"
+import { listSeasons, seasonStatus, toDateInput } from "@/lib/seasons"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = { title: "Administração" }
@@ -23,6 +25,14 @@ export default async function AdminPage() {
     db.class.count(),
     db.starRecord.aggregate({ _sum: { stars: true } }),
   ])
+
+  const seasons = (await listSeasons()).map((s) => ({
+    id: s.id,
+    name: s.name,
+    startDate: toDateInput(s.startDate),
+    endDate: toDateInput(s.endDate),
+    status: seasonStatus(s),
+  }))
 
   return (
     <div className="space-y-8">
@@ -46,6 +56,8 @@ export default async function AdminPage() {
           <div className="text-xs text-[var(--muted)] mt-1">Estrelas distribuídas</div>
         </div>
       </div>
+
+      <AdminSeasonsClient seasons={seasons} />
 
       <AdminUsersClient users={users} currentUserId={session!.user.id} />
     </div>

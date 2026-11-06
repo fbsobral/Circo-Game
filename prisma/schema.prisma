@@ -225,3 +225,13 @@ model ClassReview {
 
   @@unique([classId, studentId])
 }
+
+model Season {
+  id        String   @id @default(cuid())
+  name      String
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+  createdAt DateTime @default(now())
+
+  @@index([startDate])
+}

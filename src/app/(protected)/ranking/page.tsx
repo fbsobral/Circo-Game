@@ -6,6 +6,9 @@ import { rankWithTies } from "@/lib/ranking"
 import { Suspense } from "react"
 import { RankingFilters } from "./ranking-filters"
 import { RankingInfo } from "./ranking-info"
+import { RankingSeasons } from "./ranking-seasons"
+import { listSeasons, seasonClassDateFilter, seasonStatus } from "@/lib/seasons"
+import { formatDateShort } from "@/lib/utils"
 import Link from "next/link"
 import type { Metadata } from "next"
 
@@ -15,16 +18,25 @@ export const metadata: Metadata = { title: "Ranking" }
 export default async function RankingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; to?: string }>
+  searchParams: Promise<{ from?: string; to?: string; season?: string }>
 }) {
   const session = await auth()
-  const { from, to } = await searchParams
+  const { from, to, season: seasonParam } = await searchParams
 
-  const dateFilter = {
-    ...(from ? { gte: new Date(from) } : {}),
-    ...(to ? { lte: new Date(to + "T23:59:59") } : {}),
-  }
-  const hasDateFilter = from || to
+  const seasons = (await listSeasons()).map((s) => ({ ...s, status: seasonStatus(s) }))
+  const hasPeriodFilter = !!(from || to)
+  // Sem filtro na URL, abre na temporada em andamento (se houver).
+  const selectedSeason = hasPeriodFilter || seasonParam === "all"
+    ? null
+    : seasons.find((s) => (seasonParam ? s.id === seasonParam : s.status === "active")) ?? null
+
+  const dateFilter = selectedSeason
+    ? seasonClassDateFilter(selectedSeason)
+    : {
+        ...(from ? { gte: new Date(from) } : {}),
+        ...(to ? { lte: new Date(to + "T23:59:59") } : {}),
+      }
+  const hasDateFilter = hasPeriodFilter || !!selectedSeason
 
   const users = await db.user.findMany({
     where: { role: { in: ["student", "admin"] } },
@@ -51,7 +63,7 @@ export default async function RankingPage({
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-end justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1
             className="text-4xl font-bold"
@@ -66,14 +78,27 @@ export default async function RankingPage({
           >
             Ranking
           </h1>
+          <p className="text-sm mt-1" style={{ color: "var(--primary)" }}>
+            {selectedSeason
+              ? `${selectedSeason.name} · ${formatDateShort(selectedSeason.startDate)} – ${formatDateShort(selectedSeason.endDate)}${selectedSeason.status === "finished" ? " · encerrada" : selectedSeason.status === "upcoming" ? " · ainda não começou" : ""}`
+              : hasPeriodFilter ? "Período personalizado" : "Geral · todas as aulas"}
+          </p>
           <div className="flex items-center gap-2 mt-1">
             <p className="text-sm text-[var(--muted)]">{ranked.length} participantes · pontuação por aula esperada</p>
             <RankingInfo />
           </div>
         </div>
-        <Suspense>
-          <RankingFilters />
-        </Suspense>
+        <div className="flex flex-col items-start gap-3 sm:items-end">
+          {seasons.length > 0 && (
+            <RankingSeasons
+              seasons={seasons.map((s) => ({ id: s.id, name: s.name, status: s.status }))}
+              selected={selectedSeason?.id ?? (hasPeriodFilter ? "period" : "all")}
+            />
+          )}
+          <Suspense>
+            <RankingFilters />
+          </Suspense>
+        </div>
       </div>
 
       {/* Full list */}
