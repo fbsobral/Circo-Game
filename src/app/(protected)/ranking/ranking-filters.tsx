@@ -12,14 +12,14 @@ export function RankingFilters() {
 
   function update(key: string, value: string) {
     const next = new URLSearchParams(params.toString())
+    next.delete("season")
     if (value) next.set(key, value)
     else next.delete(key)
     startTransition(() => router.push(`/ranking?${next.toString()}`))
   }
 
   function clear() {
-    update("from", "")
-    update("to", "")
+    startTransition(() => router.push("/ranking"))
     setOpen(false)
   }
 
