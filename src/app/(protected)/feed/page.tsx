@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { FeedClient } from "./feed-client"
 import { MiniRankingRow } from "./mini-ranking-row"
+import { BirthdayCard } from "./birthday-card"
 import { extractMentionNames } from "@/lib/mentions"
 import { rankWithTies } from "@/lib/ranking"
 import type { Metadata } from "next"
@@ -87,6 +88,7 @@ export default async function FeedPage() {
   return (
     <div className="space-y-4">
       <MiniRanking />
+      <BirthdayCard currentUserId={userId} />
       <FeedClient
         initialPosts={serialized}
         nextCursor={nextCursor}

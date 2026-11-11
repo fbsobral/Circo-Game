@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { formatDate } from "@/lib/utils"
+import { ensureBirthdayNotifications } from "@/lib/birthdays"
 import Link from "next/link"
 import type { Metadata } from "next"
 
@@ -12,11 +13,13 @@ function typeIcon(type: string) {
   if (type === "broadcast") return { icon: "📢", bg: "rgba(140,100,220,0.15)", color: "#a78bfa" }
   if (type === "comment") return { icon: "💬", bg: "rgba(100,160,220,0.15)", color: "#60a5fa" }
   if (type === "review") return { icon: "📝", bg: "rgba(201,168,76,0.15)", color: "var(--star-active)" }
+  if (type === "birthday") return { icon: "🎂", bg: "rgba(224,92,122,0.15)", color: "#f472b6" }
   return { icon: "@", bg: "rgba(100,160,220,0.15)", color: "#60a5fa" }
 }
 
 export default async function NotificacoesPage() {
   const session = await auth()
+  await ensureBirthdayNotifications(session!.user.id)
 
   const notifications = await db.notification.findMany({
     where: { userId: session!.user.id },

@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { daysUntilBirthday, formatBirthday } from "@/lib/birthdays"
 import { notFound } from "next/navigation"
 import { Avatar } from "@/components/ui/avatar"
 import { StarsDisplay } from "@/components/stars"
@@ -25,6 +26,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
       image: true,
       role: true,
       createdAt: true,
+      birthDate: true,
       starRecords: {
         orderBy: { class: { date: "desc" } },
         select: { id: true, stars: true, note: true, absent: true, diamond: true, class: { select: { id: true, title: true, date: true } } },
@@ -35,6 +37,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
   if (!user) notFound()
 
   const isMe = user.id === session!.user.id
+  const isBirthdayToday = user.birthDate ? daysUntilBirthday(user.birthDate) === 0 : false
 
   const totalStars = user.starRecords.reduce((s, r) => s + (r.absent ? 0 : r.stars), 0)
   const totalDiamonds = user.starRecords.filter((r) => !r.absent && r.diamond).length
@@ -116,6 +119,11 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
               <span className="text-xs" style={{ color: "var(--muted)" }}>
                 desde {formatDate(user.createdAt)}
               </span>
+              {user.birthDate && (
+                <span className="text-xs" style={{ color: isBirthdayToday ? "#f472b6" : "var(--muted)" }}>
+                  🎂 {isBirthdayToday ? "Hoje é o aniversário!" : formatBirthday(user.birthDate)}
+                </span>
+              )}
             </div>
           </div>
         </div>
