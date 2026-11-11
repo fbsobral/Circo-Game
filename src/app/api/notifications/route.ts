@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
+import { ensureBirthdayNotifications } from "@/lib/birthdays"
 
 export async function GET(req: NextRequest) {
   const session = await auth()
@@ -8,6 +9,8 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const all = searchParams.get("all") === "1"
+
+  await ensureBirthdayNotifications(session.user.id)
 
   const notifications = await db.notification.findMany({
     where: { userId: session.user.id },

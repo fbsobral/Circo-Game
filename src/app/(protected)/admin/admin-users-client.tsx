@@ -17,6 +17,7 @@ interface User {
   createdAt: Date
   mustChangePassword?: boolean
   weeklyFrequency?: number
+  birthDate?: Date | string | null
 }
 
 const roleLabels: Record<Role, string> = {
@@ -38,7 +39,7 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
   const [formError, setFormError] = useState("")
   const [formLoading, setFormLoading] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState({ name: "", email: "", userRole: "student" as Role, weeklyFrequency: 1, newPassword: "" })
+  const [editForm, setEditForm] = useState({ name: "", email: "", userRole: "student" as Role, weeklyFrequency: 1, newPassword: "", birthDate: "" })
   const [editError, setEditError] = useState("")
   const [editLoading, setEditLoading] = useState(false)
   const [resendingId, setResendingId] = useState<string | null>(null)
@@ -65,7 +66,7 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
 
   function startEdit(user: User) {
     setEditingId(user.id)
-    setEditForm({ name: user.name ?? "", email: user.email ?? "", userRole: user.role, weeklyFrequency: user.weeklyFrequency ?? 1, newPassword: "" })
+    setEditForm({ name: user.name ?? "", email: user.email ?? "", userRole: user.role, weeklyFrequency: user.weeklyFrequency ?? 1, newPassword: "", birthDate: user.birthDate ? new Date(user.birthDate).toISOString().slice(0, 10) : "" })
     setEditError("")
   }
 
@@ -76,7 +77,7 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
     const res = await fetch("/api/admin/users", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "edit", userId: editingId, ...editForm, newPassword: editForm.newPassword || undefined }),
+      body: JSON.stringify({ action: "edit", userId: editingId, ...editForm, newPassword: editForm.newPassword || undefined, birthDate: editForm.birthDate || null }),
     })
     const data = await res.json()
     setEditLoading(false)
@@ -293,6 +294,15 @@ export function AdminUsersClient({ users: initial, currentUserId, isProfessor = 
                       onChange={(e) => setEditForm((f) => ({ ...f, newPassword: e.target.value }))}
                       autoComplete="new-password"
                     />
+                    <label className="flex items-center gap-2 sm:col-span-2">
+                      <span className="text-xs text-[var(--muted)] whitespace-nowrap">Nascimento</span>
+                      <Input
+                        type="date"
+                        value={editForm.birthDate}
+                        max={new Date().toISOString().slice(0, 10)}
+                        onChange={(e) => setEditForm((f) => ({ ...f, birthDate: e.target.value }))}
+                      />
+                    </label>
                   </div>
                   {editError && <p className="text-xs text-[var(--danger)]">{editError}</p>}
                   <div className="flex justify-end">

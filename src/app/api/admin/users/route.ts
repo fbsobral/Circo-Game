@@ -3,10 +3,11 @@ import bcrypt from "bcryptjs"
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { sendWelcomeEmail } from "@/lib/email"
+import { parseBirthDate } from "@/lib/birthdays"
 import { cleanText, generateTempPassword, isValidEmail, isValidPassword, normalizeEmail } from "@/lib/security"
 
 const ROLES = ["admin", "professor", "student"]
-const USER_SELECT = { id: true, name: true, email: true, role: true, image: true, createdAt: true, mustChangePassword: true, weeklyFrequency: true } as const
+const USER_SELECT = { id: true, name: true, email: true, role: true, image: true, createdAt: true, mustChangePassword: true, weeklyFrequency: true, birthDate: true } as const
 
 async function getActor() {
   const session = await auth()
@@ -100,6 +101,12 @@ export async function PATCH(req: NextRequest) {
     if (conflict) return NextResponse.json({ error: "E-mail já em uso" }, { status: 409 })
 
     if (body.weeklyFrequency === 1 || body.weeklyFrequency === 2) updateData.weeklyFrequency = body.weeklyFrequency
+
+    if (body.birthDate !== undefined) {
+      const birthDate = parseBirthDate(body.birthDate)
+      if (birthDate === undefined) return NextResponse.json({ error: "Data de nascimento inválida" }, { status: 400 })
+      updateData.birthDate = birthDate
+    }
 
     if (body.newPassword) {
       if (!isValidPassword(body.newPassword)) {

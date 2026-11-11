@@ -25,7 +25,7 @@ async function compressImage(file: File): Promise<string> {
   })
 }
 
-interface User { id: string; name: string | null; email: string; image: string | null; hasPassword: boolean }
+interface User { id: string; name: string | null; email: string; image: string | null; hasPassword: boolean; birthDate: string }
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -47,6 +47,11 @@ export function ContaClient({ user, googleLinked }: { user: User; googleLinked: 
   const [nameLoading, setNameLoading] = useState(false)
   const [nameMsg, setNameMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
+  const [birthDate, setBirthDate] = useState(user.birthDate)
+  const [savedBirthDate, setSavedBirthDate] = useState(user.birthDate)
+  const [birthLoading, setBirthLoading] = useState(false)
+  const [birthMsg, setBirthMsg] = useState<{ ok: boolean; text: string } | null>(null)
+
   const [current, setCurrent] = useState("")
   const [newPwd, setNewPwd] = useState("")
   const [confirmPwd, setConfirmPwd] = useState("")
@@ -58,6 +63,25 @@ export function ContaClient({ user, googleLinked }: { user: User; googleLinked: 
   const [googleMsg, setGoogleMsg] = useState("")
 
   const [deleteLoading, setDeleteLoading] = useState(false)
+
+  async function handleBirthDate(e: React.FormEvent) {
+    e.preventDefault()
+    setBirthLoading(true)
+    setBirthMsg(null)
+    const res = await fetch("/api/conta", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ birthDate: birthDate || null }),
+    })
+    setBirthLoading(false)
+    if (res.ok) {
+      setSavedBirthDate(birthDate)
+      setBirthMsg({ ok: true, text: birthDate ? "Data de nascimento salva!" : "Data de nascimento removida" })
+    } else {
+      const data = await res.json()
+      setBirthMsg({ ok: false, text: data.error })
+    }
+  }
 
   async function handleName(e: React.FormEvent) {
     e.preventDefault()
@@ -184,6 +208,28 @@ export function ContaClient({ user, googleLinked }: { user: User; googleLinked: 
               )}
               <Button type="submit" size="sm" loading={nameLoading} disabled={!name.trim() || name.trim() === (user.name ?? "")}>
                 Salvar nome
+              </Button>
+            </form>
+          </Section>
+
+          {/* Birthday */}
+          <Section title="Aniversário">
+            <form onSubmit={handleBirthDate} className="space-y-3">
+              <Input
+                type="date"
+                aria-label="Data de nascimento"
+                value={birthDate}
+                max={new Date().toISOString().slice(0, 10)}
+                onChange={(e) => { setBirthDate(e.target.value); setBirthMsg(null) }}
+              />
+              <p className="text-xs text-[var(--muted)]">A turma vê só o dia e o mês, e recebe um lembrete no dia do seu aniversário.</p>
+              {birthMsg && (
+                <p className="text-sm" style={{ color: birthMsg.ok ? "var(--primary)" : "var(--danger, #e05c7a)" }}>
+                  {birthMsg.text}
+                </p>
+              )}
+              <Button type="submit" size="sm" loading={birthLoading} disabled={birthDate === savedBirthDate}>
+                Salvar data
               </Button>
             </form>
           </Section>

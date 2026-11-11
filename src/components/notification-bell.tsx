@@ -28,6 +28,7 @@ function typeIcon(type: string) {
   if (type === "broadcast") return "📢"
   if (type === "comment") return "💬"
   if (type === "review") return "📝"
+  if (type === "birthday") return "🎂"
   return "@"
 }
 

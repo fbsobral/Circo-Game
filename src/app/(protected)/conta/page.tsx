@@ -10,15 +10,16 @@ export default async function ContaPage() {
   const session = await auth()
   const user = await db.user.findUnique({
     where: { id: session!.user.id },
-    select: { id: true, name: true, email: true, image: true, password: true },
+    select: { id: true, name: true, email: true, image: true, password: true, birthDate: true },
   })
+  const { password, birthDate, ...profile } = user!
   const googleLinked = !!(await db.account.findFirst({
     where: { userId: session!.user.id, provider: "google" },
   }))
 
   return (
     <ContaClient
-      user={{ ...user!, hasPassword: !!user?.password }}
+      user={{ ...profile, hasPassword: !!password, birthDate: birthDate ? birthDate.toISOString().slice(0, 10) : "" }}
       googleLinked={googleLinked}
     />
   )
