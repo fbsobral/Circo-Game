@@ -8,11 +8,13 @@ import { StarsPicker } from "@/components/stars"
 import { Avatar } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { isBirthdayOn } from "@/lib/birthday-match"
 
 interface User {
   id: string
   name: string | null
   image: string | null
+  birthday?: string | null
 }
 
 interface StudentRecord { stars: number; note: string; absent: boolean; included: boolean; diamond: boolean }
@@ -101,6 +103,7 @@ export function NovaAulaForm({ users }: { users: User[] }) {
   const includedCount = users.filter((u) => getRecord(u.id).included).length
   const absentCount = users.filter((u) => { const r = getRecord(u.id); return r.included && r.absent }).length
   const withDiamond = users.filter((u) => { const r = getRecord(u.id); return r.included && !r.absent && r.diamond }).length
+  const withCake = users.filter((x) => { const r = getRecord(x.id); return r.included && !r.absent && isBirthdayOn(x.birthday, date) }).length
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -178,6 +181,9 @@ export function NovaAulaForm({ users }: { users: User[] }) {
 
                   <div className="flex-1 min-w-0">
                     <div className={cn("text-sm font-medium", absent && "line-through opacity-40")}>{u.name}</div>
+                    {isBirthdayOn(u.birthday, date) && (
+                      <div className="text-xs mt-0.5" style={{ color: "#f472b6" }}>🎂 Aniversário hoje · +1 ponto se estiver presente</div>
+                    )}
                     {included && !absent && note && !isExpanded && (
                       <div className="text-xs text-[var(--muted)] italic truncate">"{note}"</div>
                     )}
@@ -248,6 +254,7 @@ export function NovaAulaForm({ users }: { users: User[] }) {
         <span className="text-sm text-[var(--muted)]">
           {includedCount} na aula
           {withDiamond > 0 && ` · ${withDiamond} 💎`}
+          {withCake > 0 && ` · ${withCake} 🎂`}
           {absentCount > 0 && ` · ${absentCount} falta${absentCount !== 1 ? "s" : ""}`}
         </span>
         <div className="flex gap-3">

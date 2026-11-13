@@ -69,7 +69,7 @@ export function RankingInfo() {
             </p>
 
             <div className="rounded-xl px-4 py-3 mb-4 text-sm font-mono text-center" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--primary)" }}>
-              pontuação = (★ + 💎) ÷ aulas esperadas
+              pontuação = (★ + 💎 + 🎂) ÷ aulas esperadas
             </div>
 
             <div className="space-y-3">
@@ -111,7 +111,7 @@ export function RankingInfo() {
               </div>
             </div>
             <p className="text-[11px] mt-3 text-center" style={{ color: "var(--muted)" }}>
-              Referência: 3,0 · 💎 é bônus concedido pelo professor — pode ultrapassar 3,0
+              Referência: 3,0 · 💎 é bônus concedido pelo professor e 🎂 é bônus por vir à aula no dia do seu aniversário (+1 cada) — podem ultrapassar 3,0
             </p>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { MiniRankingRow } from "./mini-ranking-row"
 import { BirthdayCard } from "./birthday-card"
 import { extractMentionNames } from "@/lib/mentions"
 import { rankWithTies } from "@/lib/ranking"
+import { SCORE_RECORD_SELECT, scoreRecords } from "@/lib/scoring"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = { title: "Feed" }
@@ -13,18 +14,11 @@ export const metadata: Metadata = { title: "Feed" }
 async function MiniRanking() {
   const users = await db.user.findMany({
     where: { role: { in: ["student", "admin"] } },
-    include: { starRecords: { select: { stars: true, absent: true, diamond: true } } },
+    include: { starRecords: { select: SCORE_RECORD_SELECT } },
   })
 
   const ranked = rankWithTies(users
-    .map((u) => {
-      const totalStars = u.starRecords.reduce((s, r) => s + (r.absent ? 0 : r.stars), 0)
-      const totalDiamonds = u.starRecords.filter((r) => !r.absent && r.diamond).length
-      const totalPoints = totalStars + totalDiamonds
-      const expectedClasses = u.starRecords.filter((r) => r.absent || r.stars > 0).length
-      const score = expectedClasses > 0 ? totalPoints / expectedClasses : 0
-      return { ...u, totalStars, score }
-    })
+    .map((u) => ({ ...u, ...scoreRecords(u.starRecords, u.birthDate) }))
     .filter((u) => u.totalStars > 0))
     .filter((u) => u.rank <= 3)
 

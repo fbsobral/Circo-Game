@@ -1,5 +1,6 @@
 import { db } from "@/lib/db"
 import { NovaAulaForm } from "./nova-aula-form"
+import { birthMonthDay } from "@/lib/birthday-match"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = { title: "Nova aula" }
@@ -8,7 +9,7 @@ export const metadata: Metadata = { title: "Nova aula" }
 export default async function NovaAulaPage() {
   const users = await db.user.findMany({
     where: { role: { in: ["student", "admin"] } },
-    select: { id: true, name: true, image: true },
+    select: { id: true, name: true, image: true, birthDate: true },
     orderBy: { name: "asc" },
   })
 
@@ -19,7 +20,7 @@ export default async function NovaAulaPage() {
           Registrar aula
         </h1>
       </div>
-      <NovaAulaForm users={users} />
+      <NovaAulaForm users={users.map(({ birthDate, ...u }) => ({ ...u, birthday: birthDate ? birthMonthDay(birthDate) : null }))} />
     </div>
   )
 }

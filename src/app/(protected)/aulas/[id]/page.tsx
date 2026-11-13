@@ -10,6 +10,7 @@ import { DeleteClassButton } from "./delete-class-button"
 import { ClassComments } from "./class-comments"
 import { ClassReviewForm } from "./class-review-form"
 import { extractMentionNames } from "@/lib/mentions"
+import { isBirthdayClass } from "@/lib/scoring"
 import type { Metadata } from "next"
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -32,7 +33,7 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
     include: {
       createdBy: { select: { id: true, name: true } },
       starRecords: {
-        include: { student: { select: { id: true, name: true, image: true } } },
+        include: { student: { select: { id: true, name: true, image: true, birthDate: true } } },
         orderBy: [{ absent: "asc" }, { diamond: "desc" }, { stars: "desc" }],
       },
       comments: {
@@ -52,6 +53,8 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
     ? (presentRecords.reduce((s: number, r: { stars: number }) => s + r.stars, 0) / presentRecords.length).toFixed(1)
     : null
   const absentCount = cls.starRecords.filter((r: { absent: boolean }) => r.absent).length
+  const birthdayRecords = cls.starRecords.filter((r) => isBirthdayClass(r.student.birthDate, cls.date))
+  const firstName = (name: string | null) => name?.split(" ")[0] ?? "Alguém"
 
   const myRecord = cls.starRecords.find((r) => r.student.id === userId && !r.absent)
   const myReview = myRecord
@@ -82,6 +85,12 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
           </h1>
           <p className="text-sm text-[var(--muted)] mt-1">{formatDate(cls.date)} · criada por {cls.createdBy.name}</p>
           {cls.notes && <p className="text-sm text-[var(--muted)] mt-2 italic">{cls.notes}</p>}
+          {birthdayRecords.map((r) => (
+            <p key={r.id} className="text-sm mt-2" style={{ color: "#f472b6" }}>
+              🎂 Aniversário de {firstName(r.student.name)}
+              {r.absent ? " (faltou, não ganhou o bônus)" : " · ganhou +1 ponto por comemorar com a turma!"}
+            </p>
+          ))}
         </div>
         {isProfessorOrAdmin && (
           <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -137,6 +146,7 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
               <div className="flex items-center gap-1.5">
                 <StarsDisplay value={r.stars} size="sm" />
                 {r.diamond && <span className="text-base" title="Diamante" style={{ filter: "drop-shadow(0 0 4px #67e8f9)" }}>💎</span>}
+                {isBirthdayClass(r.student.birthDate, cls.date) && <span className="text-base" title="Aula no dia do aniversário (+1 ponto bônus)">🎂</span>}
               </div>
             )}
           </div>

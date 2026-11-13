@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { notFound, redirect } from "next/navigation"
 import { formatDate } from "@/lib/utils"
 import { StarsForm } from "./stars-form"
+import { birthMonthDay } from "@/lib/birthday-match"
 import type { Metadata } from "next"
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -21,7 +22,7 @@ export default async function EsteralasPage({ params }: { params: Promise<{ id: 
 
   const [cls, students, existingRecords] = await Promise.all([
     db.class.findUnique({ where: { id }, select: { id: true, title: true, date: true, notes: true } }),
-    db.user.findMany({ where: { role: { in: ["student", "admin"] } }, select: { id: true, name: true, image: true }, orderBy: { name: "asc" } }),
+    db.user.findMany({ where: { role: { in: ["student", "admin"] } }, select: { id: true, name: true, image: true, birthDate: true }, orderBy: { name: "asc" } }),
     db.starRecord.findMany({ where: { classId: id }, select: { studentId: true, stars: true, note: true, absent: true, diamond: true } }),
   ])
 
@@ -45,7 +46,7 @@ export default async function EsteralasPage({ params }: { params: Promise<{ id: 
 
       <StarsForm
         classId={id}
-        students={students}
+        students={students.map(({ birthDate, ...s }) => ({ ...s, birthday: birthDate ? birthMonthDay(birthDate) : null }))}
         initialRecords={recordMap}
         initialTitle={cls.title ?? ""}
         initialDate={cls.date.toISOString().slice(0, 10)}
