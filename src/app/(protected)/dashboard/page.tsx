@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card"
 import { StarsDisplay } from "@/components/stars"
 import { formatDate } from "@/lib/utils"
 import { SCORE_RECORD_SELECT, scoreRecords } from "@/lib/scoring"
+import { getActiveSeason, seasonRecordWhere } from "@/lib/seasons"
 import Link from "next/link"
 import type { Metadata } from "next"
 
@@ -13,12 +14,15 @@ export const metadata: Metadata = { title: "Início" }
 export default async function DashboardPage() {
   const session = await auth()
   const userId = session!.user.id
+  // Estrelas, posição e aulas valem para o período ativo do ranking (ou todas as aulas, se não houver).
+  const activeSeason = await getActiveSeason()
+  const periodWhere = seasonRecordWhere(activeSeason)
 
   const [totalResult, allStudents, recentRecords, classCount] = await Promise.all([
-    db.starRecord.aggregate({ where: { studentId: userId }, _sum: { stars: true } }),
+    db.starRecord.aggregate({ where: { studentId: userId, ...periodWhere }, _sum: { stars: true } }),
     db.user.findMany({
       where: { role: { in: ["student", "admin"] } },
-      select: { id: true, birthDate: true, starRecords: { select: SCORE_RECORD_SELECT } },
+      select: { id: true, birthDate: true, starRecords: { where: periodWhere, select: SCORE_RECORD_SELECT } },
     }),
     db.starRecord.findMany({
       where: { studentId: userId },
@@ -26,7 +30,7 @@ export default async function DashboardPage() {
       orderBy: { class: { date: "desc" } },
       take: 5,
     }),
-    db.starRecord.groupBy({ by: ["classId"], where: { studentId: userId }, _count: true }),
+    db.starRecord.groupBy({ by: ["classId"], where: { studentId: userId, ...periodWhere }, _count: true }),
   ])
 
   const totalStars = totalResult._sum.stars ?? 0
@@ -50,7 +54,7 @@ export default async function DashboardPage() {
         >
           Olá, <span className="user-name">{session!.user.name?.split(" ")[0]}</span>
         </h1>
-        <p className="text-[var(--muted)] text-sm mt-1">seu desempenho até agora</p>
+        <p className="text-[var(--muted)] text-sm mt-1">{activeSeason ? `seu desempenho em ${activeSeason.name}` : "seu desempenho até agora"}</p>
       </div>
 
       <div className="grid grid-cols-3 gap-2 sm:gap-4">

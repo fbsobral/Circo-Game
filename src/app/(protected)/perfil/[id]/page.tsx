@@ -1,11 +1,12 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { daysUntilBirthday, formatBirthday } from "@/lib/birthdays"
+import { getActiveSeason, isInSeason, seasonRecordWhere } from "@/lib/seasons"
 import { SCORE_RECORD_SELECT, WEEKLY_BONUS, formatPoints, hasBirthdayCake, scoreRecords, weeklyBonusClassIds } from "@/lib/scoring"
 import { notFound } from "next/navigation"
 import { Avatar } from "@/components/ui/avatar"
 import { StarsDisplay } from "@/components/stars"
-import { formatDate } from "@/lib/utils"
+import { formatDate, formatDateShort } from "@/lib/utils"
 import type { Metadata } from "next"
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -40,9 +41,15 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
   const isMe = user.id === session!.user.id
   const isBirthdayToday = user.birthDate ? daysUntilBirthday(user.birthDate) === 0 : false
 
-  const { totalStars, totalDiamonds, totalCakes, weeklyBonuses, weeklyBonusPoints, totalPoints, classCount, expectedClasses } = scoreRecords(user.starRecords, user.birthDate)
+  // Pontuação, posição e presenças valem para o período ativo do ranking; o histórico mostra todas as aulas.
+  const activeSeason = await getActiveSeason()
+  const periodRecords = user.starRecords.filter((r) => isInSeason(r.class.date, activeSeason))
+  const { totalStars, totalDiamonds, totalCakes, weeklyBonuses, weeklyBonusPoints, totalPoints, classCount, expectedClasses } = scoreRecords(periodRecords, user.birthDate)
   const bonusClassIds = weeklyBonusClassIds(user.starRecords)
-  const absentCount = user.starRecords.filter((r) => r.absent).length
+  const absentCount = periodRecords.filter((r) => r.absent).length
+  const periodLabel = activeSeason
+    ? `${activeSeason.name} · ${formatDateShort(activeSeason.startDate)} – ${formatDateShort(activeSeason.endDate)}`
+    : "Geral · todas as aulas"
 
   // Calcular posição no ranking (mesmo algoritmo do ranking/page.tsx)
   const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000
@@ -53,7 +60,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
     select: {
       id: true,
       birthDate: true,
-      starRecords: { select: SCORE_RECORD_SELECT },
+      starRecords: { where: seasonRecordWhere(activeSeason), select: SCORE_RECORD_SELECT },
     },
   })
 
@@ -61,7 +68,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
   const myScore = scores.find((s) => s.id === id)?.score ?? 0
   const rankPosition = scores.some((s) => s.id === id) ? scores.filter((s) => s.score > myScore).length + 1 : 0
 
-  const totalRecords = user.starRecords.length
+  const totalRecords = periodRecords.length
   const tiedWith = scores.filter((s) => s.id !== id && s.score === myScore).length
 
   const roleLabel = user.role === "admin" ? "Admin" : user.role === "professor" ? "Professor" : "Aluno"
@@ -164,7 +171,8 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
           className="rounded-2xl px-5 py-4 text-sm space-y-1"
           style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.18)" }}
         >
-          <div className="text-xs font-semibold mb-2" style={{ color: "var(--muted)" }}>COMO SUA PONTUAÇÃO É CALCULADA</div>
+          <div className="text-xs font-semibold" style={{ color: "var(--muted)" }}>COMO SUA PONTUAÇÃO É CALCULADA</div>
+          <div className="text-xs mb-2" style={{ color: "var(--primary)" }}>Ranking principal: {periodLabel}</div>
           <div className="flex justify-between gap-2">
             <span style={{ color: "var(--muted)" }}>Estrelas ganhas</span>
             <span className="font-medium" style={{ color: "var(--star-active)" }}>{totalStars} ★</span>
@@ -217,7 +225,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
       {user.starRecords.length > 0 && (
         <div>
           <h2 className="text-sm font-semibold mb-3" style={{ color: "var(--muted)" }}>
-            HISTÓRICO DE AULAS
+            HISTÓRICO DE AULAS <span className="font-normal">(todas as aulas)</span>
           </h2>
           <div
             className="rounded-2xl overflow-hidden divide-y divide-[var(--border)]"

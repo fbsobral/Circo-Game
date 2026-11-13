@@ -6,15 +6,17 @@ import { BirthdayCard } from "./birthday-card"
 import { extractMentionNames } from "@/lib/mentions"
 import { rankWithTies } from "@/lib/ranking"
 import { SCORE_RECORD_SELECT, scoreRecords } from "@/lib/scoring"
+import { getActiveSeason, seasonRecordWhere } from "@/lib/seasons"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = { title: "Feed" }
 
 
 async function MiniRanking() {
+  const activeSeason = await getActiveSeason()
   const users = await db.user.findMany({
     where: { role: { in: ["student", "admin"] } },
-    include: { starRecords: { select: SCORE_RECORD_SELECT } },
+    include: { starRecords: { where: seasonRecordWhere(activeSeason), select: SCORE_RECORD_SELECT } },
   })
 
   const ranked = rankWithTies(users

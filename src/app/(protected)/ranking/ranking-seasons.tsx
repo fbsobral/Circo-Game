@@ -6,7 +6,7 @@ import { useTransition } from "react"
 interface SeasonOption {
   id: string
   name: string
-  status: "upcoming" | "active" | "finished"
+  active: boolean
 }
 
 export function RankingSeasons({ seasons, selected }: { seasons: SeasonOption[]; selected: string }) {
@@ -22,13 +22,13 @@ export function RankingSeasons({ seasons, selected }: { seasons: SeasonOption[];
       value={selected}
       onChange={(e) => select(e.target.value)}
       disabled={pending}
-      aria-label="Temporada"
+      aria-label="Período do ranking"
       className="rounded-full px-4 py-1.5 text-xs font-medium focus:outline-none focus:border-[var(--primary)] transition-colors disabled:opacity-60"
       style={{ background: "var(--surface)", border: "1px solid var(--primary)", color: "var(--primary)" }}
     >
       {seasons.map((s) => (
         <option key={s.id} value={s.id}>
-          {s.name}{s.status === "active" ? " (atual)" : s.status === "upcoming" ? " (próxima)" : ""}
+          {s.name}{s.active ? " (ativo)" : ""}
         </option>
       ))}
       <option value="all">Geral (todas as aulas)</option>

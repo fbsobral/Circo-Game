@@ -26,10 +26,12 @@ export default async function RankingPage({
 
   const seasons = (await listSeasons()).map((s) => ({ ...s, status: seasonStatus(s) }))
   const hasPeriodFilter = !!(from || to)
-  // Sem filtro na URL, abre na temporada em andamento (se houver).
+  // Sem filtro na URL, abre no período ativo (ranking principal). Sem período ativo, mostra o geral.
   const selectedSeason = hasPeriodFilter || seasonParam === "all"
     ? null
-    : seasons.find((s) => (seasonParam ? s.id === seasonParam : s.status === "active")) ?? null
+    : seasons.find((s) => (seasonParam ? s.id === seasonParam : s.active)) ?? null
+  const role = (session!.user as { role: string }).role
+  const canManage = role === "admin" || role === "professor"
 
   const dateFilter = selectedSeason
     ? seasonClassDateFilter(selectedSeason)
@@ -73,7 +75,7 @@ export default async function RankingPage({
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--primary)" }}>
             {selectedSeason
-              ? `${selectedSeason.name} · ${formatDateShort(selectedSeason.startDate)} – ${formatDateShort(selectedSeason.endDate)}${selectedSeason.status === "finished" ? " · encerrada" : selectedSeason.status === "upcoming" ? " · ainda não começou" : ""}`
+              ? `${selectedSeason.name}${selectedSeason.active ? " (ativo)" : ""} · ${formatDateShort(selectedSeason.startDate)} – ${formatDateShort(selectedSeason.endDate)}${selectedSeason.status === "finished" ? " · encerrado" : selectedSeason.status === "upcoming" ? " · ainda não começou" : ""}`
               : hasPeriodFilter ? "Período personalizado" : "Geral · todas as aulas"}
           </p>
           <div className="flex items-center gap-2 mt-1">
@@ -84,13 +86,18 @@ export default async function RankingPage({
         <div className="flex flex-col items-start gap-3 sm:items-end">
           {seasons.length > 0 && (
             <RankingSeasons
-              seasons={seasons.map((s) => ({ id: s.id, name: s.name, status: s.status }))}
+              seasons={seasons.map((s) => ({ id: s.id, name: s.name, active: s.active }))}
               selected={selectedSeason?.id ?? (hasPeriodFilter ? "period" : "all")}
             />
           )}
           <Suspense>
             <RankingFilters />
           </Suspense>
+          {canManage && (
+            <Link href="/ranking/periodos" className="text-xs text-[var(--muted)] hover:text-[var(--primary)] underline underline-offset-2">
+              Gerenciar períodos
+            </Link>
+          )}
         </div>
       </div>
 
