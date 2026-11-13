@@ -3,7 +3,7 @@ import { db } from "@/lib/db"
 import { Avatar } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { rankWithTies } from "@/lib/ranking"
-import { SCORE_RECORD_SELECT, scoreRecords } from "@/lib/scoring"
+import { SCORE_RECORD_SELECT, formatPoints, scoreRecords } from "@/lib/scoring"
 import { Suspense } from "react"
 import { RankingFilters } from "./ranking-filters"
 import { RankingInfo } from "./ranking-info"
@@ -137,7 +137,7 @@ export default async function RankingPage({
                   )}
                 </div>
                 <span className="text-xs text-[var(--muted)]">
-                  {student.classCount} aula{student.classCount !== 1 ? "s" : ""} · {student.totalStars} ★ total{student.totalDiamonds > 0 && ` · ${student.totalDiamonds} 💎`}{student.totalCakes > 0 && ` · ${student.totalCakes} 🎂`}
+                  {student.classCount} aula{student.classCount !== 1 ? "s" : ""} · {student.totalStars} ★ total{student.totalDiamonds > 0 && ` · ${student.totalDiamonds} 💎`}{student.totalCakes > 0 && ` · ${student.totalCakes} 🎂`}{student.weeklyBonuses > 0 && ` · +${formatPoints(student.weeklyBonusPoints)} por 2ª aula na semana`}
                 </span>
               </div>
 

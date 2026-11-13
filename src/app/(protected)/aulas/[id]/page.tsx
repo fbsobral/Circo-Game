@@ -10,7 +10,7 @@ import { DeleteClassButton } from "./delete-class-button"
 import { ClassComments } from "./class-comments"
 import { ClassReviewForm } from "./class-review-form"
 import { extractMentionNames } from "@/lib/mentions"
-import { isBirthdayClass } from "@/lib/scoring"
+import { WEEKLY_BONUS, formatPoints, isBirthdayClass, weeklyBonusClassIds } from "@/lib/scoring"
 import type { Metadata } from "next"
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -55,6 +55,24 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
   const absentCount = cls.starRecords.filter((r: { absent: boolean }) => r.absent).length
   const birthdayRecords = cls.starRecords.filter((r) => isBirthdayClass(r.student.birthDate, cls.date))
   const firstName = (name: string | null) => name?.split(" ")[0] ?? "Alguém"
+
+  // Quem ganhou o bônus da 2ª aula da semana nesta aula (olha as aulas da mesma semana).
+  const SIX_DAYS = 6 * 24 * 60 * 60 * 1000
+  const weekRecords = presentRecords.length
+    ? await db.starRecord.findMany({
+        where: {
+          studentId: { in: presentRecords.map((r) => r.studentId) },
+          absent: false,
+          class: { date: { gte: new Date(cls.date.getTime() - SIX_DAYS), lte: new Date(cls.date.getTime() + SIX_DAYS) } },
+        },
+        select: { studentId: true, stars: true, absent: true, diamond: true, class: { select: { id: true, date: true } } },
+      })
+    : []
+  const weeklyBonusStudents = new Set(
+    presentRecords
+      .filter((r) => weeklyBonusClassIds(weekRecords.filter((w) => w.studentId === r.studentId)).has(id))
+      .map((r) => r.studentId),
+  )
 
   const myRecord = cls.starRecords.find((r) => r.student.id === userId && !r.absent)
   const myReview = myRecord
@@ -147,6 +165,11 @@ export default async function AulaDetailPage({ params }: { params: Promise<{ id:
                 <StarsDisplay value={r.stars} size="sm" />
                 {r.diamond && <span className="text-base" title="Diamante" style={{ filter: "drop-shadow(0 0 4px #67e8f9)" }}>💎</span>}
                 {isBirthdayClass(r.student.birthDate, cls.date) && <span className="text-base" title="Aula no dia do aniversário (+1 ponto bônus)">🎂</span>}
+                {weeklyBonusStudents.has(r.studentId) && (
+                  <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap" title="2ª aula da semana (+0,5 ponto bônus)" style={{ color: "var(--primary)", border: "1px solid rgba(201,168,76,0.4)" }}>
+                    +{formatPoints(WEEKLY_BONUS)} 2ª da semana
+                  </span>
+                )}
               </div>
             )}
           </div>
