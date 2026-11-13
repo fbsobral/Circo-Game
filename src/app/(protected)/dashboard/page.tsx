@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Início" }
 export default async function DashboardPage() {
   const session = await auth()
   const userId = session!.user.id
-  // Estrelas, posição e aulas valem para o período ativo do ranking (ou todas as aulas, se não houver).
+  // Estrelas, posição e aulas valem para a temporada ativa do ranking (ou todas as aulas, se não houver).
   const activeSeason = await getActiveSeason()
   const periodWhere = seasonRecordWhere(activeSeason)
 

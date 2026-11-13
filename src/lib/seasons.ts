@@ -1,6 +1,6 @@
 import { db } from "./db"
 
-// Situação do período pelas datas (não confundir com o período ativo, escolhido à mão).
+// Situação da temporada pelas datas (não confundir com a temporada ativa, escolhida à mão).
 export type SeasonStatus = "upcoming" | "current" | "finished"
 
 export interface SeasonLike {
@@ -42,12 +42,12 @@ export async function listSeasons() {
   return db.season.findMany({ orderBy: { startDate: "desc" } })
 }
 
-// O período ativo vale como ranking principal em todo o app. Sem período ativo, vale o geral.
+// A temporada ativa vale como ranking principal em todo o app. Sem temporada ativa, vale o geral.
 export async function getActiveSeason() {
   return db.season.findFirst({ where: { active: true } })
 }
 
-// Filtro de StarRecord para o período (ou undefined = todas as aulas).
+// Filtro de StarRecord para a temporada (ou undefined = todas as aulas).
 export function seasonRecordWhere(season: SeasonLike | null) {
   return season ? { class: { date: seasonClassDateFilter(season) } } : undefined
 }
@@ -58,7 +58,7 @@ export function isInSeason(date: Date, season: SeasonLike | null): boolean {
   return date >= range.gte && date < range.lt
 }
 
-// Ativa um período e desativa os outros (só um ativo por vez).
+// Ativa uma temporada e desativa as outras (só uma ativa por vez).
 export async function setActiveSeason(id: string | null) {
   await db.$transaction([
     db.season.updateMany({ where: { active: true, ...(id ? { id: { not: id } } : {}) }, data: { active: false } }),

@@ -3,13 +3,13 @@ import { db } from "@/lib/db"
 import { setActiveSeason } from "@/lib/seasons"
 import { forbidden, requireStaff, validateSeason } from "../validate"
 
-// Edita nome/datas, ou só liga/desliga o período ativo com { active: boolean }.
+// Edita nome/datas, ou só liga/desliga a temporada ativa com { active: boolean }.
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   if (!(await requireStaff())) return forbidden()
 
   const { id } = await params
   const existing = await db.season.findUnique({ where: { id }, select: { id: true, active: true } })
-  if (!existing) return NextResponse.json({ error: "Período não encontrado" }, { status: 404 })
+  if (!existing) return NextResponse.json({ error: "Temporada não encontrada" }, { status: 404 })
 
   const body = await req.json().catch(() => ({}))
 

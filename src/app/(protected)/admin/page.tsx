@@ -52,14 +52,14 @@ export default async function AdminPage() {
       </div>
 
       <Link
-        href="/ranking/periodos"
+        href="/ranking/temporadas"
         className="flex items-center justify-between gap-3 rounded-xl px-4 py-3 transition-colors hover:border-[var(--primary)]"
         style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
       >
         <div>
-          <div className="text-base font-semibold">Períodos do ranking</div>
+          <div className="text-base font-semibold">Temporadas do ranking</div>
           <div className="text-xs text-[var(--muted)]">
-            {activeSeason ? `Ativo: ${activeSeason.name}` : "Nenhum período ativo · vale o ranking geral"}
+            {activeSeason ? `Ativa: ${activeSeason.name}` : "Nenhuma temporada ativa · vale o ranking geral"}
           </div>
         </div>
         <span className="text-sm text-[var(--primary)]">Gerenciar →</span>

@@ -9,7 +9,7 @@ export interface Standing {
   total: number
 }
 
-// Posições no ranking principal (período ativo, ou geral se não houver).
+// Posições no ranking principal (temporada ativa, ou geral se não houver).
 export async function getStandings(): Promise<Map<string, Standing>> {
   const activeSeason = await getActiveSeason()
   const users = await db.user.findMany({

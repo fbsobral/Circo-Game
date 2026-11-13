@@ -1,6 +1,6 @@
 ALTER TABLE "Season" ADD COLUMN IF NOT EXISTS "active" BOOLEAN NOT NULL DEFAULT false;
 
--- Mantém o comportamento atual: o período em andamento hoje vira o ativo.
+-- Mantém o comportamento atual: a temporada em andamento hoje vira a ativa.
 UPDATE "Season" SET "active" = true
 WHERE "id" = (
   SELECT "id" FROM "Season"
