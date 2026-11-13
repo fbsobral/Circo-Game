@@ -67,8 +67,9 @@ export function scoreRecords(records: ScoreRecord[], birthDate: Date | null | un
   const totalPoints = totalStars + totalDiamonds + totalCakes + weeklyBonusPoints
   const expectedClasses = records.filter((r) => r.absent || r.stars > 0).length
   const classCount = records.filter((r) => !r.absent).length
+  const absentCount = records.filter((r) => r.absent).length
   const score = expectedClasses > 0 ? totalPoints / expectedClasses : 0
-  return { totalStars, totalDiamonds, totalCakes, weeklyBonuses, weeklyBonusPoints, totalPoints, expectedClasses, classCount, score }
+  return { totalStars, totalDiamonds, totalCakes, weeklyBonuses, weeklyBonusPoints, totalPoints, expectedClasses, classCount, absentCount, score }
 }
 
 // Pontos com até uma casa decimal, no formato brasileiro (ex.: 31,5).

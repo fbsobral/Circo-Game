@@ -137,7 +137,11 @@ export default async function RankingPage({
                   )}
                 </div>
                 <span className="text-xs text-[var(--muted)]">
-                  {student.classCount} aula{student.classCount !== 1 ? "s" : ""} · {student.totalStars} ★ total{student.totalDiamonds > 0 && ` · ${student.totalDiamonds} 💎`}{student.totalCakes > 0 && ` · ${student.totalCakes} 🎂`}{student.weeklyBonuses > 0 && ` · +${formatPoints(student.weeklyBonusPoints)} por 2ª aula na semana`}
+                  {student.classCount} aula{student.classCount !== 1 ? "s" : ""} ·{" "}
+                  <span style={student.absentCount > 0 ? { color: "#f87171" } : undefined}>
+                    {student.absentCount} falta{student.absentCount !== 1 ? "s" : ""}
+                  </span>
+                  {" "}· {student.totalStars} ★ total{student.totalDiamonds > 0 && ` · ${student.totalDiamonds} 💎`}{student.totalCakes > 0 && ` · ${student.totalCakes} 🎂`}{student.weeklyBonuses > 0 && ` · +${formatPoints(student.weeklyBonusPoints)} por 2ª aula na semana`}
                 </span>
               </div>
 
