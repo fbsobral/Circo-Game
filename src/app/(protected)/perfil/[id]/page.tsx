@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { daysUntilBirthday, formatBirthday } from "@/lib/birthdays"
+import { SCORE_RECORD_SELECT, hasBirthdayCake, scoreRecords } from "@/lib/scoring"
 import { notFound } from "next/navigation"
 import { Avatar } from "@/components/ui/avatar"
 import { StarsDisplay } from "@/components/stars"
@@ -39,10 +40,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
   const isMe = user.id === session!.user.id
   const isBirthdayToday = user.birthDate ? daysUntilBirthday(user.birthDate) === 0 : false
 
-  const totalStars = user.starRecords.reduce((s, r) => s + (r.absent ? 0 : r.stars), 0)
-  const totalDiamonds = user.starRecords.filter((r) => !r.absent && r.diamond).length
-  const totalPoints = totalStars + totalDiamonds
-  const classCount = user.starRecords.filter((r) => !r.absent).length
+  const { totalStars, totalDiamonds, totalCakes, totalPoints, classCount, expectedClasses } = scoreRecords(user.starRecords, user.birthDate)
   const absentCount = user.starRecords.filter((r) => r.absent).length
 
   // Calcular posição no ranking (mesmo algoritmo do ranking/page.tsx)
@@ -53,20 +51,15 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
     where: { role: { in: ["student", "admin"] } },
     select: {
       id: true,
-      starRecords: { select: { stars: true, absent: true, diamond: true } },
+      birthDate: true,
+      starRecords: { select: SCORE_RECORD_SELECT },
     },
   })
 
-  const scores = allStudents.map((u) => {
-    const stars = u.starRecords.reduce((s, r) => s + (r.absent ? 0 : r.stars), 0)
-    const diamonds = u.starRecords.filter((r) => !r.absent && r.diamond).length
-    const expected = u.starRecords.filter((r) => r.absent || r.stars > 0).length
-    return { id: u.id, score: expected > 0 ? (stars + diamonds) / expected : 0 }
-  })
+  const scores = allStudents.map((u) => ({ id: u.id, score: scoreRecords(u.starRecords, u.birthDate).score }))
   const myScore = scores.find((s) => s.id === id)?.score ?? 0
   const rankPosition = scores.some((s) => s.id === id) ? scores.filter((s) => s.score > myScore).length + 1 : 0
 
-  const expectedClasses = user.starRecords.filter((r) => r.absent || r.stars > 0).length
   const totalRecords = user.starRecords.length
   const tiedWith = scores.filter((s) => s.id !== id && s.score === myScore).length
 
@@ -181,6 +174,12 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
               <span className="font-medium">💎 × {totalDiamonds}</span>
             </div>
           )}
+          {totalCakes > 0 && (
+            <div className="flex justify-between gap-2">
+              <span style={{ color: "var(--muted)" }}>Aula no dia do aniversário (bônus +1 cada)</span>
+              <span className="font-medium">🎂 × {totalCakes}</span>
+            </div>
+          )}
           <div className="flex justify-between gap-2">
             <span style={{ color: "var(--muted)" }}>Total de pontos</span>
             <span className="font-medium">{totalPoints}</span>
@@ -202,7 +201,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             <span style={{ color: "var(--star-active)" }}>{myScore.toFixed(2)} ★</span>
           </div>
           <div className="text-xs pt-0.5" style={{ color: "var(--muted)" }}>
-            Referência: 3,00 · diamante é bônus acima do máximo
+            Referência: 3,00 · 💎 diamante e 🎂 aula no aniversário são bônus acima do máximo
           </div>
         </div>
       )}
@@ -238,6 +237,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     <StarsDisplay value={r.stars} size="sm" />
                     {r.diamond && <span className="text-base" title="Diamante (+1 ponto bônus)" style={{ filter: "drop-shadow(0 0 4px #67e8f9)" }}>💎</span>}
+                    {hasBirthdayCake(r, user.birthDate) && <span className="text-base" title="Aula no dia do aniversário (+1 ponto bônus)">🎂</span>}
                   </div>
                 )}
               </div>

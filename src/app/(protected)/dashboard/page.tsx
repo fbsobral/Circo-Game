@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { Card } from "@/components/ui/card"
 import { StarsDisplay } from "@/components/stars"
 import { formatDate } from "@/lib/utils"
+import { SCORE_RECORD_SELECT, scoreRecords } from "@/lib/scoring"
 import Link from "next/link"
 import type { Metadata } from "next"
 
@@ -17,7 +18,7 @@ export default async function DashboardPage() {
     db.starRecord.aggregate({ where: { studentId: userId }, _sum: { stars: true } }),
     db.user.findMany({
       where: { role: { in: ["student", "admin"] } },
-      select: { id: true, starRecords: { select: { stars: true, absent: true, diamond: true } } },
+      select: { id: true, birthDate: true, starRecords: { select: SCORE_RECORD_SELECT } },
     }),
     db.starRecord.findMany({
       where: { studentId: userId },
@@ -29,12 +30,7 @@ export default async function DashboardPage() {
   ])
 
   const totalStars = totalResult._sum.stars ?? 0
-  const scores = allStudents.map((u) => {
-    const stars = u.starRecords.reduce((sum, r) => sum + (r.absent ? 0 : r.stars), 0)
-    const diamonds = u.starRecords.filter((r) => !r.absent && r.diamond).length
-    const expected = u.starRecords.filter((r) => r.absent || r.stars > 0).length
-    return { id: u.id, score: expected > 0 ? (stars + diamonds) / expected : 0 }
-  })
+  const scores = allStudents.map((u) => ({ id: u.id, score: scoreRecords(u.starRecords, u.birthDate).score }))
   const mine = scores.find((s) => s.id === userId)
   const position = mine ? scores.filter((s) => s.score > mine.score).length + 1 : null
 

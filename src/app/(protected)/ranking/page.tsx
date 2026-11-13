@@ -3,6 +3,7 @@ import { db } from "@/lib/db"
 import { Avatar } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { rankWithTies } from "@/lib/ranking"
+import { SCORE_RECORD_SELECT, scoreRecords } from "@/lib/scoring"
 import { Suspense } from "react"
 import { RankingFilters } from "./ranking-filters"
 import { RankingInfo } from "./ranking-info"
@@ -43,21 +44,13 @@ export default async function RankingPage({
     include: {
       starRecords: {
         where: hasDateFilter ? { class: { date: dateFilter } } : undefined,
-        select: { stars: true, absent: true, diamond: true },
+        select: SCORE_RECORD_SELECT,
       },
     },
   })
 
   const ranked = rankWithTies(users
-    .map((u) => {
-      const totalStars = u.starRecords.reduce((sum: number, r: { stars: number; absent: boolean; diamond: boolean }) => sum + (r.absent ? 0 : r.stars), 0)
-      const totalDiamonds = u.starRecords.filter((r: { absent: boolean; diamond: boolean }) => !r.absent && r.diamond).length
-      const totalPoints = totalStars + totalDiamonds
-      const expectedClasses = u.starRecords.filter((r: { absent: boolean; stars: number }) => r.absent || r.stars > 0).length
-      const classCount = u.starRecords.filter((r: { absent: boolean }) => !r.absent).length
-      const score = expectedClasses > 0 ? totalPoints / expectedClasses : 0
-      return { ...u, totalStars, totalDiamonds, totalPoints, classCount, score, expectedClasses }
-    })
+    .map((u) => ({ ...u, ...scoreRecords(u.starRecords, u.birthDate) }))
     .filter((u) => u.totalStars > 0 || !hasDateFilter))
 
   return (
@@ -144,7 +137,7 @@ export default async function RankingPage({
                   )}
                 </div>
                 <span className="text-xs text-[var(--muted)]">
-                  {student.classCount} aula{student.classCount !== 1 ? "s" : ""} · {student.totalStars} ★ total{student.totalDiamonds > 0 && ` · ${student.totalDiamonds} 💎`}
+                  {student.classCount} aula{student.classCount !== 1 ? "s" : ""} · {student.totalStars} ★ total{student.totalDiamonds > 0 && ` · ${student.totalDiamonds} 💎`}{student.totalCakes > 0 && ` · ${student.totalCakes} 🎂`}
                 </span>
               </div>
 

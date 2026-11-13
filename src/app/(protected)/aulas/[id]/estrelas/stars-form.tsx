@@ -6,11 +6,13 @@ import { Avatar } from "@/components/ui/avatar"
 import { StarsPicker } from "@/components/stars"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { isBirthdayOn } from "@/lib/birthday-match"
 
 interface Student {
   id: string
   name: string | null
   image: string | null
+  birthday?: string | null
 }
 
 interface StudentRecord { stars: number; note: string; absent: boolean; included: boolean; diamond: boolean }
@@ -106,6 +108,7 @@ export function StarsForm({ classId, students, initialRecords, initialTitle, ini
   const absentCount = students.filter((s) => { const r = getRecord(s.id); return r.included && r.absent }).length
   const withStars = students.filter((s) => { const r = getRecord(s.id); return r.included && !r.absent && r.stars > 0 }).length
   const withDiamond = students.filter((s) => { const r = getRecord(s.id); return r.included && !r.absent && r.diamond }).length
+  const withCake = students.filter((x) => { const r = getRecord(x.id); return r.included && !r.absent && isBirthdayOn(x.birthday, date) }).length
 
   return (
     <div className="space-y-6">
@@ -190,6 +193,9 @@ export function StarsForm({ classId, students, initialRecords, initialTitle, ini
 
                   <div className="flex-1 min-w-0">
                     <div className={cn("text-sm font-medium", absent && "line-through opacity-40")}>{student.name}</div>
+                    {isBirthdayOn(student.birthday, date) && (
+                      <div className="text-xs mt-0.5" style={{ color: "#f472b6" }}>🎂 Aniversário hoje · +1 ponto se estiver presente</div>
+                    )}
                     {included && !absent && note && !isExpanded && (
                       <div className="text-xs text-[var(--muted)] italic truncate">"{note}"</div>
                     )}
@@ -271,6 +277,7 @@ export function StarsForm({ classId, students, initialRecords, initialTitle, ini
           {includedCount} na aula
           {withStars > 0 && ` · ${withStars} com ★`}
           {withDiamond > 0 && ` · ${withDiamond} 💎`}
+          {withCake > 0 && ` · ${withCake} 🎂`}
           {absentCount > 0 && ` · ${absentCount} falta${absentCount !== 1 ? "s" : ""}`}
         </span>
         <Button
