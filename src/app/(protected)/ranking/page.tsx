@@ -26,7 +26,7 @@ export default async function RankingPage({
 
   const seasons = (await listSeasons()).map((s) => ({ ...s, status: seasonStatus(s) }))
   const hasPeriodFilter = !!(from || to)
-  // Sem filtro na URL, abre no período ativo (ranking principal). Sem período ativo, mostra o geral.
+  // Sem filtro na URL, abre na temporada ativa (ranking principal). Sem temporada ativa, mostra o geral.
   const selectedSeason = hasPeriodFilter || seasonParam === "all"
     ? null
     : seasons.find((s) => (seasonParam ? s.id === seasonParam : s.active)) ?? null
@@ -75,7 +75,7 @@ export default async function RankingPage({
           </h1>
           <p className="text-sm mt-1" style={{ color: "var(--primary)" }}>
             {selectedSeason
-              ? `${selectedSeason.name}${selectedSeason.active ? " (ativo)" : ""} · ${formatDateShort(selectedSeason.startDate)} – ${formatDateShort(selectedSeason.endDate)}${selectedSeason.status === "finished" ? " · encerrado" : selectedSeason.status === "upcoming" ? " · ainda não começou" : ""}`
+              ? `${selectedSeason.name}${selectedSeason.active ? " (ativa)" : ""} · ${formatDateShort(selectedSeason.startDate)} – ${formatDateShort(selectedSeason.endDate)}${selectedSeason.status === "finished" ? " · encerrada" : selectedSeason.status === "upcoming" ? " · ainda não começou" : ""}`
               : hasPeriodFilter ? "Período personalizado" : "Geral · todas as aulas"}
           </p>
           <div className="flex items-center gap-2 mt-1">
@@ -94,8 +94,8 @@ export default async function RankingPage({
             <RankingFilters />
           </Suspense>
           {canManage && (
-            <Link href="/ranking/periodos" className="text-xs text-[var(--muted)] hover:text-[var(--primary)] underline underline-offset-2">
-              Gerenciar períodos
+            <Link href="/ranking/temporadas" className="text-xs text-[var(--muted)] hover:text-[var(--primary)] underline underline-offset-2">
+              Gerenciar temporadas
             </Link>
           )}
         </div>

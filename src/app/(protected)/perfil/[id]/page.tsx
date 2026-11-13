@@ -41,7 +41,7 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
   const isMe = user.id === session!.user.id
   const isBirthdayToday = user.birthDate ? daysUntilBirthday(user.birthDate) === 0 : false
 
-  // Pontuação, posição e presenças valem para o período ativo do ranking; o histórico mostra todas as aulas.
+  // Pontuação, posição e presenças valem para a temporada ativa do ranking; o histórico mostra todas as aulas.
   const activeSeason = await getActiveSeason()
   const periodRecords = user.starRecords.filter((r) => isInSeason(r.class.date, activeSeason))
   const { totalStars, totalDiamonds, totalCakes, weeklyBonuses, weeklyBonusPoints, totalPoints, classCount, expectedClasses } = scoreRecords(periodRecords, user.birthDate)

@@ -8,7 +8,7 @@ import { formatDateShort } from "@/lib/utils"
 
 type Status = "upcoming" | "current" | "finished"
 
-export interface Period {
+export interface SeasonItem {
   id: string
   name: string
   startDate: string
@@ -20,12 +20,12 @@ export interface Period {
 const statusLabels: Record<Status, string> = {
   upcoming: "ainda não começou",
   current: "em andamento",
-  finished: "encerrado",
+  finished: "encerrada",
 }
 
 const emptyForm = { name: "", startDate: "", endDate: "" }
 
-export function PeriodsClient({ seasons }: { seasons: Period[] }) {
+export function SeasonsClient({ seasons }: { seasons: SeasonItem[] }) {
   const router = useRouter()
   const [editingId, setEditingId] = useState<string | "new" | null>(null)
   const [form, setForm] = useState(emptyForm)
@@ -40,7 +40,7 @@ export function PeriodsClient({ seasons }: { seasons: Period[] }) {
     setError("")
   }
 
-  function startEdit(season: Period) {
+  function startEdit(season: SeasonItem) {
     setEditingId(season.id)
     setForm({ name: season.name, startDate: season.startDate, endDate: season.endDate })
     setError("")
@@ -59,14 +59,14 @@ export function PeriodsClient({ seasons }: { seasons: Period[] }) {
     const data = await res.json()
     setSaving(false)
     if (!res.ok) {
-      setError(data.error ?? "Erro ao salvar período")
+      setError(data.error ?? "Erro ao salvar temporada")
       return
     }
     setEditingId(null)
     router.refresh()
   }
 
-  async function toggleActive(season: Period) {
+  async function toggleActive(season: SeasonItem) {
     setTogglingId(season.id)
     await fetch(`/api/admin/seasons/${season.id}`, {
       method: "PATCH",
@@ -77,8 +77,8 @@ export function PeriodsClient({ seasons }: { seasons: Period[] }) {
     router.refresh()
   }
 
-  async function remove(season: Period) {
-    if (!confirm(`Remover o período "${season.name}"? As aulas e estrelas não são apagadas.`)) return
+  async function remove(season: SeasonItem) {
+    if (!confirm(`Remover a temporada "${season.name}"? As aulas e estrelas não são apagadas.`)) return
     setDeletingId(season.id)
     await fetch(`/api/admin/seasons/${season.id}`, { method: "DELETE" })
     setDeletingId(null)
@@ -115,13 +115,13 @@ export function PeriodsClient({ seasons }: { seasons: Period[] }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-1">
-        <h2 className="text-base font-semibold">Períodos ({seasons.length})</h2>
-        <Button size="sm" onClick={startNew}>{editingId === "new" ? "Cancelar" : "+ Novo período"}</Button>
+        <h2 className="text-base font-semibold">Temporadas ({seasons.length})</h2>
+        <Button size="sm" onClick={startNew}>{editingId === "new" ? "Cancelar" : "+ Nova temporada"}</Button>
       </div>
       <p className="text-xs text-[var(--muted)] mb-4">
-        Cada período conta só as aulas entre o início e o fim, e pode se sobrepor a outros (ex.: um semestre dentro do ano).
-        O período <strong>ativo</strong> é o ranking principal do app: ranking, feed, perfis e início. Só um fica ativo por vez;
-        sem nenhum ativo, vale o ranking geral com todas as aulas.
+        Cada temporada conta só as aulas entre o início e o fim, e pode se sobrepor a outras (ex.: um semestre dentro do ano).
+        A temporada <strong>ativa</strong> é o ranking principal do app: ranking, feed, perfis e início. Só uma fica ativa por vez;
+        sem nenhuma ativa, vale o ranking geral com todas as aulas.
       </p>
 
       {editingId === "new" && <div className="mb-4">{formEl}</div>}
@@ -138,7 +138,7 @@ export function PeriodsClient({ seasons }: { seasons: Period[] }) {
                     <span className="text-sm font-medium truncate">{season.name}</span>
                     {season.active && (
                       <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ color: "#0d0d14", background: "var(--primary)" }}>
-                        ATIVO
+                        ATIVA
                       </span>
                     )}
                   </div>
@@ -151,7 +151,7 @@ export function PeriodsClient({ seasons }: { seasons: Period[] }) {
                   role="switch"
                   aria-checked={season.active}
                   aria-label={season.active ? `Desativar ${season.name}` : `Ativar ${season.name}`}
-                  title={season.active ? "Período ativo (clique para desativar)" : "Tornar este o período ativo"}
+                  title={season.active ? "Temporada ativa (clique para desativar)" : "Tornar esta a temporada ativa"}
                   disabled={togglingId !== null}
                   onClick={() => toggleActive(season)}
                   className="relative w-10 h-6 rounded-full flex-shrink-0 transition-colors disabled:opacity-50"
@@ -169,7 +169,7 @@ export function PeriodsClient({ seasons }: { seasons: Period[] }) {
           </div>
         ))}
         {seasons.length === 0 && (
-          <p className="py-8 text-center text-sm text-[var(--muted)]">Nenhum período cadastrado</p>
+          <p className="py-8 text-center text-sm text-[var(--muted)]">Nenhuma temporada cadastrada</p>
         )}
       </div>
     </div>
