@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { daysUntilBirthday, formatBirthday } from "@/lib/birthdays"
-import { SCORE_RECORD_SELECT, hasBirthdayCake, scoreRecords } from "@/lib/scoring"
+import { SCORE_RECORD_SELECT, WEEKLY_BONUS, formatPoints, hasBirthdayCake, scoreRecords, weeklyBonusClassIds } from "@/lib/scoring"
 import { notFound } from "next/navigation"
 import { Avatar } from "@/components/ui/avatar"
 import { StarsDisplay } from "@/components/stars"
@@ -40,7 +40,8 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
   const isMe = user.id === session!.user.id
   const isBirthdayToday = user.birthDate ? daysUntilBirthday(user.birthDate) === 0 : false
 
-  const { totalStars, totalDiamonds, totalCakes, totalPoints, classCount, expectedClasses } = scoreRecords(user.starRecords, user.birthDate)
+  const { totalStars, totalDiamonds, totalCakes, weeklyBonuses, weeklyBonusPoints, totalPoints, classCount, expectedClasses } = scoreRecords(user.starRecords, user.birthDate)
+  const bonusClassIds = weeklyBonusClassIds(user.starRecords)
   const absentCount = user.starRecords.filter((r) => r.absent).length
 
   // Calcular posição no ranking (mesmo algoritmo do ranking/page.tsx)
@@ -181,8 +182,14 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             </div>
           )}
           <div className="flex justify-between gap-2">
+            <span style={{ color: "var(--muted)" }}>2ª aula na mesma semana (bônus +{formatPoints(WEEKLY_BONUS)} cada)</span>
+            <span className="font-medium whitespace-nowrap">
+              {weeklyBonuses} {weeklyBonuses === 1 ? "semana" : "semanas"} · +{formatPoints(weeklyBonusPoints)}
+            </span>
+          </div>
+          <div className="flex justify-between gap-2">
             <span style={{ color: "var(--muted)" }}>Total de pontos</span>
-            <span className="font-medium">{totalPoints}</span>
+            <span className="font-medium">{formatPoints(totalPoints)}</span>
           </div>
           <div className="flex justify-between gap-2">
             <span style={{ color: "var(--muted)" }}>Aulas presentes</span>
@@ -197,11 +204,11 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
             <span className="font-medium">{expectedClasses}</span>
           </div>
           <div className="border-t pt-2 mt-2 flex justify-between gap-2 font-semibold" style={{ borderColor: "rgba(201,168,76,0.2)" }}>
-            <span>Pontuação ({totalPoints} ÷ {expectedClasses})</span>
+            <span>Pontuação ({formatPoints(totalPoints)} ÷ {expectedClasses})</span>
             <span style={{ color: "var(--star-active)" }}>{myScore.toFixed(2)} ★</span>
           </div>
           <div className="text-xs pt-0.5" style={{ color: "var(--muted)" }}>
-            Referência: 3,00 · 💎 diamante e 🎂 aula no aniversário são bônus acima do máximo
+            Referência: 3,00 · 💎 diamante, 🎂 aula no aniversário e a 2ª aula da semana (+{formatPoints(WEEKLY_BONUS)}) são bônus acima do máximo
           </div>
         </div>
       )}
@@ -238,6 +245,11 @@ export default async function PerfilPage({ params }: { params: Promise<{ id: str
                     <StarsDisplay value={r.stars} size="sm" />
                     {r.diamond && <span className="text-base" title="Diamante (+1 ponto bônus)" style={{ filter: "drop-shadow(0 0 4px #67e8f9)" }}>💎</span>}
                     {hasBirthdayCake(r, user.birthDate) && <span className="text-base" title="Aula no dia do aniversário (+1 ponto bônus)">🎂</span>}
+                    {bonusClassIds.has(r.class.id) && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" title="2ª aula da semana (+0,5 ponto bônus)" style={{ color: "var(--primary)", border: "1px solid rgba(201,168,76,0.4)" }}>
+                        +{formatPoints(WEEKLY_BONUS)} 2ª da semana
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
