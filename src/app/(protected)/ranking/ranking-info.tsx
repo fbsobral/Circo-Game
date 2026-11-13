@@ -69,7 +69,7 @@ export function RankingInfo() {
             </p>
 
             <div className="rounded-xl px-4 py-3 mb-4 text-sm font-mono text-center" style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--primary)" }}>
-              pontuação = (★ + 💎 + 🎂) ÷ aulas esperadas
+              pontuação = (★ + 💎 + 🎂 + bônus 2ª aula) ÷ aulas esperadas
             </div>
 
             <div className="space-y-3">
@@ -77,23 +77,27 @@ export function RankingInfo() {
               <div className="rounded-2xl px-4 py-3 text-sm space-y-1" style={{ background: "rgba(201,168,76,0.06)", border: "1px solid rgba(201,168,76,0.18)" }}>
                 <div className="text-xs font-semibold mb-2" style={{ color: "var(--primary)" }}>Ana — vai 2× por semana</div>
                 <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Estrelas ganhas</span><span className="font-medium" style={{ color: "var(--star-active)" }}>50 ★</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>2ª aula na semana (+0,5 cada)</span><span className="font-medium">10 semanas · +5</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Total de pontos</span><span className="font-medium">55</span></div>
                 <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Aulas presentes</span><span className="font-medium">20</span></div>
                 <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Faltas registradas</span><span className="font-medium">0</span></div>
                 <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Total de aulas esperadas</span><span className="font-medium">20</span></div>
                 <div className="flex justify-between gap-2 pt-2 mt-1 font-semibold border-t" style={{ borderColor: "rgba(201,168,76,0.2)" }}>
-                  <span>Pontuação (50 ÷ 20)</span><span style={{ color: "var(--primary)" }}>2,50 ★</span>
+                  <span>Pontuação (55 ÷ 20)</span><span style={{ color: "var(--primary)" }}>2,75 ★</span>
                 </div>
               </div>
 
               {/* Bia */}
               <div className="rounded-2xl px-4 py-3 text-sm space-y-1" style={{ background: "rgba(220,38,38,0.06)", border: "1px solid rgba(220,38,38,0.25)" }}>
-                <div className="text-xs font-semibold mb-2" style={{ color: "#f87171" }}>Bia — vai 2×, mas faltou 3×</div>
+                <div className="text-xs font-semibold mb-2" style={{ color: "#f87171" }}>Bia — vai 2×, mas faltou 3× (em 3 semanas diferentes)</div>
                 <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Estrelas ganhas</span><span className="font-medium" style={{ color: "var(--star-active)" }}>20 ★</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>2ª aula na semana (+0,5 cada)</span><span className="font-medium">7 semanas · +3,5</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Total de pontos</span><span className="font-medium">23,5</span></div>
                 <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Aulas presentes</span><span className="font-medium">17</span></div>
                 <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Faltas registradas</span><span className="font-medium" style={{ color: "#f87171" }}>3</span></div>
                 <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Total de aulas esperadas</span><span className="font-medium">20</span></div>
                 <div className="flex justify-between gap-2 pt-2 mt-1 font-semibold border-t" style={{ borderColor: "rgba(220,38,38,0.2)" }}>
-                  <span>Pontuação (20 ÷ 20)</span><span style={{ color: "#f87171" }}>1,00 ★</span>
+                  <span>Pontuação (23,5 ÷ 20)</span><span style={{ color: "#f87171" }}>1,18 ★</span>
                 </div>
               </div>
 
@@ -109,9 +113,23 @@ export function RankingInfo() {
                   <span>Pontuação (31 ÷ 10)</span><span style={{ color: "#67e8f9" }}>3,10 ★</span>
                 </div>
               </div>
+
+              {/* Edu vai 1x por semana */}
+              <div className="rounded-2xl px-4 py-3 text-sm space-y-1" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+                <div className="text-xs font-semibold mb-2" style={{ color: "var(--text)" }}>Edu — vai 1× por semana</div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Estrelas ganhas</span><span className="font-medium" style={{ color: "var(--star-active)" }}>28 ★</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>2ª aula na semana (+0,5 cada)</span><span className="font-medium">0 semanas · +0</span></div>
+                <div className="flex justify-between gap-2"><span style={{ color: "var(--muted)" }}>Total de aulas esperadas</span><span className="font-medium">10</span></div>
+                <div className="flex justify-between gap-2 pt-2 mt-1 font-semibold border-t" style={{ borderColor: "var(--border)" }}>
+                  <span>Pontuação (28 ÷ 10)</span><span>2,80 ★</span>
+                </div>
+                <div className="text-[11px] pt-1" style={{ color: "var(--muted)" }}>
+                  Quem vem 1× não perde nada: vale a média das aulas. Quem vem 2× ganha +0,5 na 2ª aula de cada semana — com média 2,60 chegaria a 2,85.
+                </div>
+              </div>
             </div>
             <p className="text-[11px] mt-3 text-center" style={{ color: "var(--muted)" }}>
-              Referência: 3,0 · 💎 é bônus concedido pelo professor e 🎂 é bônus por vir à aula no dia do seu aniversário (+1 cada) — podem ultrapassar 3,0
+              Referência: 3,0 · bônus podem ultrapassar 3,0: 💎 concedido pelo professor (+1), 🎂 aula no dia do seu aniversário (+1) e 2ª aula na mesma semana (+0,5, no máximo uma por semana, de segunda a domingo)
             </p>
           </div>
         </div>
