@@ -232,6 +232,7 @@ model Season {
   name      String
   startDate DateTime @db.Date
   endDate   DateTime @db.Date
+  active    Boolean  @default(false)
   createdAt DateTime @default(now())
 
   @@index([startDate])

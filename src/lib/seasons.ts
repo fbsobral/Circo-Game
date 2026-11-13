@@ -1,6 +1,7 @@
 import { db } from "./db"
 
-export type SeasonStatus = "upcoming" | "active" | "finished"
+// Situação do período pelas datas (não confundir com o período ativo, escolhido à mão).
+export type SeasonStatus = "upcoming" | "current" | "finished"
 
 export interface SeasonLike {
   startDate: Date
@@ -24,7 +25,7 @@ export function seasonStatus(season: SeasonLike, now = new Date()): SeasonStatus
   const day = today(now)
   if (day < season.startDate) return "upcoming"
   if (day > season.endDate) return "finished"
-  return "active"
+  return "current"
 }
 
 export function parseSeasonDate(value: unknown): Date | null {
@@ -41,12 +42,26 @@ export async function listSeasons() {
   return db.season.findMany({ orderBy: { startDate: "desc" } })
 }
 
-export async function findOverlappingSeason(startDate: Date, endDate: Date, ignoreId?: string) {
-  return db.season.findFirst({
-    where: {
-      startDate: { lte: endDate },
-      endDate: { gte: startDate },
-      ...(ignoreId ? { id: { not: ignoreId } } : {}),
-    },
-  })
+// O período ativo vale como ranking principal em todo o app. Sem período ativo, vale o geral.
+export async function getActiveSeason() {
+  return db.season.findFirst({ where: { active: true } })
+}
+
+// Filtro de StarRecord para o período (ou undefined = todas as aulas).
+export function seasonRecordWhere(season: SeasonLike | null) {
+  return season ? { class: { date: seasonClassDateFilter(season) } } : undefined
+}
+
+export function isInSeason(date: Date, season: SeasonLike | null): boolean {
+  if (!season) return true
+  const range = seasonClassDateFilter(season)
+  return date >= range.gte && date < range.lt
+}
+
+// Ativa um período e desativa os outros (só um ativo por vez).
+export async function setActiveSeason(id: string | null) {
+  await db.$transaction([
+    db.season.updateMany({ where: { active: true, ...(id ? { id: { not: id } } : {}) }, data: { active: false } }),
+    ...(id ? [db.season.update({ where: { id }, data: { active: true } })] : []),
+  ])
 }
